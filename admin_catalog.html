@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Catalog</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+</head>
+<body>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="applogo(2).png" alt="Logo" class="logo-icon">
+                <h2 class="brand-name">Library Learning Management Hub</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item"><a href="admin_dashboard.html"><span class="icon"><i class="fi fi-rr-home"></i></span> Dashboard</a></li>
+                    <li class="nav-item active"><a href="admin_catalog.html"><span class="icon"><i class="fi fi-rr-search"></i></span> Catalog</a></li>
+                    <li class="nav-item"><a href="admin_users.html"><span class="icon"><i class="fi fi-rr-users-alt"></i></span> Users</a></li>
+                    <li class="nav-item"><a href="admin_waitlist.html"><span class="icon"><i class="fi fi-rr-clock"></i></span> Waitlist</a></li>
+                    <li class="nav-item"><a href="admin_settings.html"><span class="icon"><i class="fi fi-rr-settings"></i></span> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-profile">
+                    <span class="admin-name">Admin User</span>
+                    <span class="admin-role">Admin</span>
+                </div>
+                <a href="login.html" class="logout-link"><span class="icon"><i class="fi fi-rr-exit"></i></span> Logout</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="catalog-header">
+                <div class="header-left">
+                    <h1>Library Catalog</h1>
+                    <p>Search and discover our collection.</p>
+                </div>
+                <button class="btn-add" onclick="openModal()">
+                    <i class="fi fi-rr-plus"></i> Add New Book
+                </button>
+            </header>
+
+            <div class="toolbar">
+                <div class="search-bar">
+                    <i class="fi fi-rr-search"></i>
+                    <input type="text" placeholder="Search by title, author, or keyword...">
+                </div>
+                <div class="filter-group">
+                    <select class="select-filter">
+                        <option>All Genres</option>
+                        <option>Computer Science</option>
+                        <option>Mathematics</option>
+                    </select>
+                    <select class="select-filter">
+                        <option>All Status</option>
+                        <option>Available</option>
+                        <option>Unavailable</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="book-grid" id="bookGrid">
+    <div class="book-card" data-genre="Computer Science" data-status="Available">
+        <div class="book-image">
+            <img src="library1.jpg" alt="Algorithms">
+            <span class="badge available">Available (3)</span>
+        </div>
+        <div class="book-details">
+            <span class="category">COMPUTER SCIENCE</span>
+            <h3 class="book-title">Introduction to Algorithms</h3>
+        </div>
+    </div>
+
+    <div class="book-card" data-genre="Software Engineering" data-status="Unavailable">
+        <div class="book-image">
+            <img src="book2.jpg" alt="Design Patterns">
+            <span class="badge unavailable">Unavailable</span>
+        </div>
+        <div class="book-details">
+            <span class="category">SOFTWARE ENGINEERING</span>
+            <h3 class="book-title">Design Patterns</h3>
+        </div>
+    </div>
+    
+    </div>
+        </main>
+    </div>
+
+    <div id="addBookModal" class="modal-overlay">
+        <div class="modal-container">
+            <header class="form-header" style="background: var(--sidebar-blue); padding: 20px; display: flex; justify-content: space-between; align-items: center; color: white;">
+                <div class="header-text">
+                    <h1 style="margin: 0; font-size: 1.5rem;">Add New Material</h1>
+                    <p style="margin: 0; font-size: 0.8rem; opacity: 0.8;">Fill in the cataloging metadata to add to the library.</p>
+                </div>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </header>
+
+            <form id="bookForm" class="book-form" style="padding: 30px;">
+                <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div class="column-left">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600;">Cover Image URL *</label>
+                        <div class="image-placeholder" style="border: 2px dashed #e5e7eb; height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 10px; margin-bottom: 15px; color: #9ca3af;">
+                            <i class="fi fi-rr-picture" style="font-size: 2rem;"></i>
+                            <p>Paste URL below to preview</p>
+                        </div>
+                        <input type="url" placeholder="https://..." required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 15px;">
+                        
+                        <div class="form-group-row" style="display: flex; gap: 15px;">
+                            <div class="input-item" style="flex: 1;">
+                                <label style="display: block; margin-bottom: 5px;">Total Copies</label>
+                                <input type="number" value="1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            </div>
+                            <div class="input-item" style="flex: 1;">
+                                <label style="display: block; margin-bottom: 5px;">Genre</label>
+                                <select style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                    <option>Computer Science</option>
+                                    <option>Mathematics</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="column-right">
+                        <div class="input-item" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Title *</label>
+                            <input type="text" placeholder="Main Title" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div class="input-item" style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Author(s) *</label>
+                            <input type="text" placeholder="Primary Author" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        
+                        <h3 class="section-title" style="font-size: 0.9rem; margin: 20px 0 10px; color: var(--sidebar-blue);">LIBRARY CLASSIFICATION</h3>
+                        <div class="form-group-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div class="input-item" style="flex: 1;">
+                                <label style="display: block; margin-bottom: 5px;">Call Number</label>
+                                <input type="text" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            </div>
+                            <div class="input-item" style="flex: 1;">
+                                <label style="display: block; margin-bottom: 5px;">Item Price (₱)</label>
+                                <input type="number" value="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                            </div>
+                        </div>
+                        <div class="input-item">
+                            <label style="display: block; margin-bottom: 5px;">Description / Abstract</label>
+                            <textarea rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px;">
+                    <button type="button" class="btn-cancel" onclick="closeModal()" style="padding: 10px 25px; border-radius: 8px; border: 1px solid #ddd; cursor: pointer;">Cancel</button>
+                    <button type="submit" class="btn-publish" style="padding: 10px 25px; border-radius: 8px; border: none; background: var(--sidebar-blue); color: white; cursor: pointer; font-weight: 600;">Publish to Catalog</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+    // --- Modal Logic ---
+const modal = document.getElementById('addBookModal');
+function openModal() { modal.classList.add('active'); }
+function closeModal() { modal.classList.remove('active'); }
+
+// --- Filtering Logic ---
+const searchInput = document.querySelector('.search-bar input');
+const genreFilter = document.querySelectorAll('.select-filter')[0];
+const statusFilter = document.querySelectorAll('.select-filter')[1];
+const bookCards = document.querySelectorAll('.book-card');
+
+function filterBooks() {
+    const searchTerm = searchInput.value.toLowerCase();
+    const selectedGenre = genreFilter.value;
+    const selectedStatus = statusFilter.value;
+
+    bookCards.forEach(card => {
+        const title = card.querySelector('.book-title').innerText.toLowerCase();
+        const genre = card.getAttribute('data-genre');
+        const status = card.getAttribute('data-status');
+
+        // Check if matches Search
+        const matchesSearch = title.includes(searchTerm);
+        
+        // Check if matches Genre (or "All Genres" is selected)
+        const matchesGenre = (selectedGenre === "All Genres" || genre === selectedGenre);
+        
+        // Check if matches Status (or "All Status" is selected)
+        const matchesStatus = (selectedStatus === "All Status" || status === selectedStatus);
+
+        // Show card only if ALL conditions are true
+        if (matchesSearch && matchesGenre && matchesStatus) {
+            card.style.display = "block";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+
+// Add event listeners so filtering happens as you type or click
+searchInput.addEventListener('input', filterBooks);
+genreFilter.addEventListener('change', filterBooks);
+statusFilter.addEventListener('change', filterBooks);
+
+// Close modal on outside click
+window.onclick = function(event) {
+    if (event.target === modal) closeModal();
+}
+</script>
+</body>
+</html>

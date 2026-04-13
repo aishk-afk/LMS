@@ -1,0 +1,440 @@
+/* --- BASE LAYOUT (Side-by-Side) --- */
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+}
+
+.admin-container {
+    display: flex; /* This puts sidebar and content next to each other */
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 260px;
+    background-color: #1e3a8a; /* Blue from Figma */
+    color: white;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+    position: fixed;
+    height: 100vh;
+}
+
+.main-content {
+    flex: 1;
+    margin-left: 260px; /* Leave room for the fixed sidebar */
+    padding: 40px;
+}
+
+/* Sidebar Elements */
+.sidebar-header { padding: 0 24px; margin-bottom: 40px; }
+.brand-name { font-size: 18px; margin: 0; }
+.sidebar-nav ul { list-style: none; padding: 0; }
+.nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    color: rgba(255,255,255,0.7);
+    text-decoration: none;
+    transition: 0.2s;
+}
+.nav-item.active a {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-left: 4px solid white;
+}
+
+/* --- ROOT VARIABLES --- */
+:root {
+    --primary-blue: #2563eb;
+    --bg-light: #f8fafc;
+    --border-color: #f1f5f9;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --error-red: #ef4444;
+    --warning-orange: #f97316;
+}
+
+/* --- LAYOUT --- */
+.member-main {
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.welcome-section {
+    margin-bottom: 32px;
+}
+
+.welcome-section h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+/* --- STAT CARDS --- */
+.member-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+}
+
+.m-stat-card {
+    background: white;
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform 0.2s;
+}
+
+.m-icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+}
+
+.bg-blue { background: #eff6ff; color: var(--primary-blue); }
+.bg-orange { background: #fff7ed; color: var(--warning-orange); }
+.bg-red { background: #fef2f2; color: var(--error-red); }
+
+/* --- CONTENT CARDS --- */
+.content-card {
+    background: white;
+    border-radius: 24px;
+    border: 1px solid var(--border-color);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* --- THE OVERDUE ITEM BOX (From Figma) --- */
+.borrowed-item-box {
+    background: #fffafa; /* Light red tint for urgency */
+    border: 1px solid #fee2e2;
+    border-radius: 18px;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.book-cover-sm {
+    width: 55px;
+    height: 80px;
+    border-radius: 6px;
+    object-fit: cover;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.item-details h4 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-main);
+}
+
+.item-details p {
+    margin: 4px 0 12px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* --- TAGS & BADGES --- */
+.item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 500;
+}
+
+.tag-red { 
+    background: #fee2e2; 
+    color: var(--error-red); 
+    border: 1px solid #fecaca;
+}
+
+.tag-outline { 
+    border: 1px solid #e2e8f0; 
+    color: var(--text-muted); 
+    background: white;
+}
+
+/* --- HISTORY TABLE --- */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.history-table th {
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.history-table td {
+    padding: 16px 10px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 14px;
+    color: #475569;
+}
+
+.empty-msg {
+    text-align: center;
+    color: #94a3b8;
+    padding: 50px 0;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* --- ENHANCED MEMBER CARDS --- */
+.m-stat-card {
+    background: white;
+    padding: 24px;
+    border-radius: 20px;
+    border: 1px solid #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+.m-stat-info span {
+    font-size: 13px;
+    color: #64748b;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.m-stat-info h3 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.text-red { color: #ef4444; }
+
+/* --- PILL BADGES (Figma Style) --- */
+.badge-count {
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* --- HISTORY TABLE --- */
+.history-section {
+    margin-top: 32px;
+}
+
+.history-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 8px; /* Creates the "row gap" look */
+}
+
+.history-table th {
+    text-align: left;
+    color: #94a3b8;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0 16px 8px;
+}
+
+.history-table td {
+    background: white;
+    padding: 16px;
+    font-size: 14px;
+    color: #334155;
+    border-top: 1px solid #f1f5f9;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Rounds the corners of the white rows */
+.history-table td:first-child { 
+    border-left: 1px solid #f1f5f9;
+    border-radius: 12px 0 0 12px; 
+}
+.history-table td:last-child { 
+    border-right: 1px solid #f1f5f9; 
+    border-radius: 0 12px 12px 0; 
+}
+
+.status-tag {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-reference { 
+    background: #f1f5f9; 
+    color: #475569; 
+}
+.status-none { 
+    color: #10b981; 
+    font-weight: 600; 
+} /* For 'None' in Fine column */
+
+/* --- EMPTY STATE CONTAINERS --- */
+.empty-state-card {
+    background: white;
+    border: 1px dashed #cbd5e1; /* Dashed border from Figma */
+    border-radius: 16px;
+    padding: 60px 20px;
+    text-align: center;
+    margin-top: 12px;
+}
+
+.empty-state-card p {
+    color: #94a3b8;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* --- BADGES --- */
+.badge-orange {
+    background: #fff7ed;
+    color: #c2410c;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.badge-green {
+    background: #f0fdf4;
+    color: #15803d;
+    padding: 4px 12px;
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Section Spacing */
+.dashboard-section {
+    margin-top: 40px;
+}
+
+/* --- ACCOUNT SETTINGS PAGE --- */
+
+/* Centers the card in the middle of the available white space */
+.flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: calc(100vh - 80px); /* Adjust for main-content padding */
+}
+
+.settings-card {
+    background: white;
+    width: 100%;
+    max-width: 500px; /* Narrower width matching Figma */
+    padding: 40px;
+    border-radius: 24px; /* Rounded corners from Figma */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); /* Soft shadow */
+    text-align: center;
+}
+
+.settings-header {
+    margin-bottom: 32px;
+}
+
+/* The gear icon circle */
+.icon-circle {
+    width: 64px;
+    height: 64px;
+    background: #eff6ff;
+    color: #3b82f6;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin: 0 auto 16px;
+}
+
+.settings-header h1 {
+    font-size: 24px;
+    color: var(--text-main);
+    margin: 0 0 8px 0;
+}
+
+.settings-header p {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+/* Form Layout */
+.form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px; /* Matching Figma input style */
+    background: #f8fafc;
+    font-size: 14px;
+    color: var(--text-main);
+    box-sizing: border-box; /* Ensures padding doesn't break width */
+}
+
+/* Figma Primary Blue Button */
+.btn-save-large {
+    width: 100%;
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background 0.2s;
+}
+
+.btn-save-large:hover {
+    background: #1d4ed8;
+}

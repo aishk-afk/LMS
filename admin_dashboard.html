@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Dashboard</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <style>
+        /* --- EXACT FIGMA REPLICAS --- */
+        .filter-buttons {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 10px;
+            gap: 4px;
+        }
+
+        .filter-buttons button {
+            border: none;
+            background: transparent;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-buttons button.active {
+            background: white;
+            color: #1e293b;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-weight: 600;
+        }
+
+        .book-img-holder {
+            width: 45px;
+            height: 60px;
+            border-radius: 4px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .book-img-holder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .details-section {
+            background: white;
+            margin: 20px 0;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .hidden { display: none !important; }
+        .rotate-arrow { transform: rotate(180deg); transition: 0.3s; }
+        .text-red { color: #ef4444 !important; }
+
+        /* Row Layouts */
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .dashboard-row.equal { grid-template-columns: 1fr 1fr; }
+        .dashboard-row.single { grid-template-columns: 1fr; }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid #f1f5f9;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="applogo(2).png" alt="Logo" class="logo-icon">
+                <h2 class="brand-name">Library Learning Management Hub</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active"><a href="#"><i class="fi fi-rr-home"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="admin_catalog.html"><i class="fi fi-rr-search"></i> Catalog</a></li>
+                    <li class="nav-item"><a href="admin_users.html"><i class="fi fi-rr-users-alt"></i> Users</a></li>
+                    <li class="nav-item"><a href="admin_waitlist.html"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
+                    <li class="nav-item"><a href="admin_settings.html"><i class="fi fi-rr-settings"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-profile">
+                    <strong>Admin User</strong><br><small>Admin</small>
+                </div>
+                <a href="login.html" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="overview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <div class="title-group">
+                    <h1 style="font-size: 28px; margin: 0;">System Overview</h1>
+                    <p style="color: #64748b; margin: 4px 0 0;">Monitor library activity and statistics.</p>
+                </div>
+                <div class="filter-buttons">
+                    <button class="active">Weekly</button>
+                    <button>Monthly</button>
+                    <button>Yearly</button>
+                </div>
+            </header>
+
+            <div class="stats-grid">
+                <div class="stat-card" onclick="toggleDetails('activeSection', 'arrow1')" style="cursor: pointer;">
+                    <div class="stat-icon icon-blue"><i class="fi fi-rr-book-alt"></i></div>
+                    <div class="stat-info"><span>Active Borrows</span><h3>2</h3></div>
+                    <i class="fi fi-rr-angle-small-down dropdown-arrow" id="arrow1"></i>
+                </div>
+                <div class="stat-card" onclick="toggleDetails('overdueSection', 'arrow2')" style="cursor: pointer;">
+                    <div class="stat-icon icon-red"><i class="fi fi-rr-exclamation"></i></div>
+                    <div class="stat-info"><span>Overdue Items</span><h3 class="text-red">2</h3></div>
+                    <i class="fi fi-rr-angle-small-down dropdown-arrow" id="arrow2"></i>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon icon-green"><i class="fi fi-rr-book"></i></div>
+                    <div class="stat-info"><span>Total Books</span><h3>14</h3></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon icon-purple"><i class="fi fi-rr-credit-card"></i></div>
+                    <div class="stat-info"><span>Fines Collected</span><h3>₱1044</h3></div>
+                </div>
+            </div>
+
+            <div id="activeSection" class="details-section hidden">
+                <h3 style="margin-bottom: 20px;"><i class="fi fi-rr-book-alt" style="color:#3b82f6"></i> Active Borrows</h3>
+                <table class="borrow-table">
+                    <thead><tr><th>BOOK</th><th>BORROWER</th><th>DUE DATE</th><th>ACTION</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td><div style="display:flex; align-items:center; gap:12px;"><div class="book-img-holder"><img src="book1.jpg"></div>Pride and Prejudice</div></td>
+                            <td>Jane Doe</td><td>Mar 15, 2026</td>
+                            <td><button class="btn-return">Return</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="overdueSection" class="details-section hidden">
+                <h3 style="margin-bottom: 20px;"><i class="fi fi-rr-exclamation" style="color:#ef4444"></i> Overdue Items</h3>
+                <table class="borrow-table">
+                    <thead><tr><th>BOOK</th><th>BORROWER</th><th>DAYS OVERDUE</th><th>FINE</th><th>ACTION</th></tr></thead>
+                    <tbody>
+                        <tr>
+                            <td><div style="display:flex; align-items:center; gap:12px;"><div class="book-img-holder"><img src="book1.jpg"></div>Pride and Prejudice</div></td>
+                            <td>Jane Doe</td><td class="text-red">29 days</td><td>₱87</td>
+                            <td><button class="btn-return" style="background:#ef4444">Return</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="dashboard-row">
+                <div class="card">
+                    <h3>Borrowing Trends</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="borrowingChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Genre Popularity</h3>
+                    <div class="chart-wrapper chart-wrapper--small">
+                        <canvas id="genreChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-row equal">
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">🏆 Top Borrowers</h3>
+                    <div class="borrower-item" style="display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <div class="avatar" style="background:#eff6ff; color:#3b82f6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">J</div>
+                            <div><strong>Jane Doe</strong><br><small style="color:#64748b;">Student</small></div>
+                        </div>
+                        <span style="font-weight:600; color:#3b82f6;">4x</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Materials Added by Genre</h3>
+                    <div class="chart-wrapper chart-wrapper--small">
+                        <canvas id="materialsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-row single">
+                <div class="card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin:0;">Fine Summary</h3>
+                            <small style="color:#64748b;">Collected: ₱440 · Pending: ₱627 · Total: ₱1067</small>
+                        </div>
+                        <div class="filter-buttons">
+                            <button>Weekly</button>
+                            <button class="active">Monthly</button>
+                            <button>Yearly</button>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper chart-wrapper--small">
+                        <canvas id="finesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="dashboard_charts.js"></script>
+    <script>
+        function toggleDetails(id, arrowId) {
+            document.getElementById(id).classList.toggle('hidden');
+            document.getElementById(arrowId).classList.toggle('rotate-arrow');
+        }
+    </script>
+</body>
+</html>
