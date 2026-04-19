@@ -1,7 +1,7 @@
 const sidebarContent = {
     member: `
         <div class="sidebar-header">
-            <img src="applogo(2).png" class="logo-icon">
+            <img src="applogo(2).png" alt="Logo" class="logo-icon">
             <h2 class="brand-name">Library Learning Management Hub</h2>
         </div>
         <nav class="sidebar-nav">
@@ -12,7 +12,7 @@ const sidebarContent = {
             </ul>
         </nav>
         <div class="sidebar-footer">
-            <div class="user-info"><strong>Jane Doe</strong><small>Student</small></div>
+            <div class="admin-profile"><strong>Jane Doe</strong><br><small>Student</small></div>
             <a href="login.html" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
         </div>`
 };
