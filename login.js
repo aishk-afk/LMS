@@ -18,7 +18,7 @@ document.getElementById("loginForm").addEventListener("submit", function(event) 
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
 
-    fetch("http://localhost/LMS/backend/login.php", {
+    fetch("login.php", {
         method: "POST",
         headers: {
             "Content-Type": "application/x-www-form-urlencoded"
