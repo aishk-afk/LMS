@@ -1,0 +1,144 @@
+/* --- SIDEBAR CSS --- */
+/* Centralized sidebar styling for both admin and member layouts */
+
+:root {
+    --sidebar-bg: #1e3a8a;
+    --sidebar-active: #2563eb;
+    --sidebar-width: 260px;
+    --text-white: #ffffff;
+    --text-muted: rgba(255, 255, 255, 0.7);
+    --border-subtle: rgba(255, 255, 255, 0.1);
+}
+
+/* --- SIDEBAR CONTAINER --- */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--sidebar-bg);
+    color: var(--text-white);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    z-index: 1000;
+    overflow: hidden;
+    top: 0;
+    left: 0;
+}
+
+/* --- SIDEBAR HEADER --- */
+.sidebar-header {
+    padding: 32px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.brand-name {
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 0;
+}
+
+/* --- SIDEBAR NAVIGATION --- */
+.sidebar-nav {
+    flex: 1;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item {
+    margin-bottom: 4px;
+}
+
+.nav-item a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 24px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 15px;
+    transition: all 0.2s ease;
+}
+
+.nav-item:hover a {
+    color: var(--text-white);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-item.active a {
+    background: var(--sidebar-active);
+    color: var(--text-white);
+    border-radius: 0 50px 50px 0;
+    margin-right: 20px;
+}
+
+/* --- SIDEBAR FOOTER --- */
+.sidebar-footer {
+    padding: 32px 24px;
+    border-top: 1px solid var(--border-subtle);
+    margin-top: auto;
+    flex-shrink: 0;
+}
+
+.user-info {
+    margin-bottom: 16px;
+}
+
+.user-info strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.user-info small {
+    display: block;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 12px;
+}
+
+.admin-profile {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.admin-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.admin-role {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.logout-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    transition: color 0.2s;
+}
+
+.logout-link:hover {
+    color: var(--text-white);
+}

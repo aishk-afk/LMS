@@ -1,49 +1,21 @@
-/* --- BASE LAYOUT (Side-by-Side) --- */
+/* --- ROOT VARIABLES --- */
+
+/* Base Layout */
 body {
     margin: 0;
     font-family: 'Inter', sans-serif;
     background-color: #f8fafc;
 }
 
-.admin-container {
-    display: flex; /* This puts sidebar and content next to each other */
-    min-height: 100vh;
-}
-
-.sidebar {
-    width: 260px;
-    background-color: #1e3a8a; /* Blue from Figma */
-    color: white;
+.app-container {
     display: flex;
-    flex-direction: column;
-    padding: 24px 0;
-    position: fixed;
-    height: 100vh;
+    min-height: 100vh;
 }
 
 .main-content {
     flex: 1;
-    margin-left: 260px; /* Leave room for the fixed sidebar */
+    margin-left: 260px;
     padding: 40px;
-}
-
-/* Sidebar Elements */
-.sidebar-header { padding: 0 24px; margin-bottom: 40px; }
-.brand-name { font-size: 18px; margin: 0; }
-.sidebar-nav ul { list-style: none; padding: 0; }
-.nav-item a {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 24px;
-    color: rgba(255,255,255,0.7);
-    text-decoration: none;
-    transition: 0.2s;
-}
-.nav-item.active a {
-    background: rgba(255,255,255,0.1);
-    color: white;
-    border-left: 4px solid white;
 }
 
 /* --- ROOT VARIABLES --- */
