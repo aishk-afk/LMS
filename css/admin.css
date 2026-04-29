@@ -422,8 +422,17 @@
     width: 90%;
     max-width: 900px;
     border-radius: 20px;
-    overflow: hidden;
+    overflow-y: auto;
+    max-height: 90vh;
+    display: block;
     animation: slideIn 0.3s ease-out;
+}
+.modal-container::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-container::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
 }
 
 @keyframes slideIn {
