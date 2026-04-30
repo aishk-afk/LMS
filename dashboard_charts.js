@@ -1,43 +1,224 @@
+// Chart instances - stored globally for updates
+let charts = {
+    borrowing: null,
+    genre: null,
+    materials: null,
+    fines: null
+};
+
+// Function to fetch dashboard data from server
+async function fetchDashboardData(type, startDate, endDate, period = 'week') {
+    try {
+        const url = `getDashboardData.php?type=${type}&startDate=${startDate}&endDate=${endDate}&period=${period}`;
+        const response = await fetch(url);
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching data:', error);
+        return [];
+    }
+}
+
+// Update statistics cards
+async function updateStatistics(startDate, endDate) {
+    try {
+        // Active Borrows
+        const activeBorrows = await fetchDashboardData('activeBorrows', startDate, endDate);
+        document.querySelector('.stat-card:nth-child(1) h3').textContent = activeBorrows.count || 0;
+
+        // Overdue Items
+        const overdueItems = await fetchDashboardData('overdueItems', startDate, endDate);
+        document.querySelector('.stat-card:nth-child(2) h3').textContent = overdueItems.count || 0;
+
+        // Total Books
+        const totalBooks = await fetchDashboardData('totalBooks', startDate, endDate);
+        document.querySelector('.stat-card:nth-child(3) h3').textContent = totalBooks.count || 0;
+
+        // Fines Collected
+        const finesCollected = await fetchDashboardData('finesCollected', startDate, endDate);
+        document.querySelector('.stat-card:nth-child(4) h3').textContent = '₱' + finesCollected.total || 0;
+    } catch (error) {
+        console.error('Error updating statistics:', error);
+    }
+}
+
+// Update active borrow details table
+async function updateActiveBorrowsTable(startDate, endDate) {
+    try {
+        const data = await fetchDashboardData('activeBorrowDetails', startDate, endDate);
+        const tbody = document.querySelector('#activeSection .borrow-table tbody');
+        
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">No active borrows</td></tr>';
+            return;
+        }
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><div style="display:flex; align-items:center; gap:12px;">
+                    <div class="book-img-holder"><img src="book_placeholder.jpg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2245%22 height=%2260%22%3E%3Crect fill=%22%23e2e8f0%22 width=%2245%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%2364748b%22 font-size=%2210%22%3EBook%3C/text%3E%3C/svg%3E'"></div>
+                    ${row.title}
+                </div></td>
+                <td>${row.user_id}</td>
+                <td>${row.due_date}</td>
+                <td><button class="btn-return">Return</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error('Error updating active borrows table:', error);
+    }
+}
+
+// Update overdue details table
+async function updateOverdueTable(startDate, endDate) {
+    try {
+        const data = await fetchDashboardData('overdueDetails', startDate, endDate);
+        const tbody = document.querySelector('#overdueSection .borrow-table tbody');
+        
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        if (data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">No overdue items</td></tr>';
+            return;
+        }
+
+        data.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><div style="display:flex; align-items:center; gap:12px;">
+                    <div class="book-img-holder"><img src="book_placeholder.jpg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2245%22 height=%2260%22%3E%3Crect fill=%22%23e2e8f0%22 width=%2245%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%2364748b%22 font-size=%2210%22%3EBook%3C/text%3E%3C/svg%3E'"></div>
+                    ${row.title}
+                </div></td>
+                <td>${row.user_id}</td>
+                <td style="color: #ef4444; font-weight: 600;">${row.days_overdue} days</td>
+                <td>₱${row.fine_amount || 0}</td>
+                <td><button class="btn-return" style="background:#ef4444">Return</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error('Error updating overdue table:', error);
+    }
+}
+
+// Update top borrowers
+async function updateTopBorrowers(startDate, endDate) {
+    try {
+        const data = await fetchDashboardData('topBorrowers', startDate, endDate);
+        const container = document.querySelector('.dashboard-row.equal .card:first-child .borrower-item')?.parentElement;
+        
+        if (!container) return;
+
+        // Clear existing entries but keep the structure
+        const parentCard = container.closest('.card');
+        const borrowersList = parentCard.querySelectorAll('.borrower-item');
+        borrowersList.forEach((item, index) => {
+            if (index > 0) item.remove(); // Keep first one, remove others
+        });
+
+        // Add new borrowers (limit to 3 for display)
+        data.slice(0, 3).forEach(row => {
+            const div = document.createElement('div');
+            div.className = 'borrower-item';
+            div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;';
+            
+            const initials = row.user_id.substring(0, 1).toUpperCase();
+            div.innerHTML = `
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="avatar" style="background:#eff6ff; color:#3b82f6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">${initials}</div>
+                    <div><strong>${row.user_id}</strong><br><small style="color:#64748b;">User</small></div>
+                </div>
+                <span style="font-weight:600; color:#3b82f6;">${row.borrow_count}x</span>
+            `;
+            container.appendChild(div);
+        });
+    } catch (error) {
+        console.error('Error updating top borrowers:', error);
+    }
+}
+
+// Sample data generators (fallback if no data)
+function generateWeeklyData() {
+    const today = new Date();
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(date.getDate() - i);
+        days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+    }
+    
+    return {
+        labels: days,
+        borrows: [45, 28, 52, 31, 49, 35, 28],
+        returns: [12, 32, 28, 5, 45, 43, 20]
+    };
+}
+
+// Initialize charts
 document.addEventListener('DOMContentLoaded', function () {
-    // 1. Borrowing Trends Line Chart
+    initializeBorrowingChart();
+    initializeGenreChart();
+    initializeMaterialsChart();
+    initializeFinesChart();
+});
+
+function initializeBorrowingChart() {
     const ctxLine = document.getElementById('borrowingChart').getContext('2d');
-    new Chart(ctxLine, {
+    const data = generateWeeklyData();
+    
+    charts.borrowing = new Chart(ctxLine, {
         type: 'line',
         data: {
-            labels: ['Apr 06', 'Apr 07', 'Apr 08', 'Apr 09', 'Apr 10', 'Apr 11', 'Apr 12'],
+            labels: data.labels,
             datasets: [{
                 label: 'Borrows',
-                data: [50, 25, 38, 20, 55, 28, 15],
+                data: data.borrows,
                 borderColor: '#3182ce',
-                backgroundColor: '#3182ce',
+                backgroundColor: 'rgba(49, 130, 206, 0.1)',
                 tension: 0.4,
-                fill: false
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#3182ce'
             }, {
                 label: 'Returns',
-                data: [12, 32, 28, 5, 45, 43, 20],
+                data: data.returns,
                 borderColor: '#38a169',
-                backgroundColor: '#38a169',
+                backgroundColor: 'rgba(56, 161, 105, 0.1)',
                 tension: 0.4,
-                fill: false
+                fill: true,
+                pointRadius: 4,
+                pointBackgroundColor: '#38a169'
             }]
         },
         options: { 
             responsive: true, 
             maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom' } } 
+            plugins: { legend: { position: 'bottom' } },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
         }
     });
+}
 
-    // 2. Genre Popularity Doughnut
+function initializeGenreChart() {
     const ctxDoughnut = document.getElementById('genreChart').getContext('2d');
-    new Chart(ctxDoughnut, {
+    charts.genre = new Chart(ctxDoughnut, {
         type: 'doughnut',
         data: {
             labels: ['Biology', 'History', 'Political Science'],
             datasets: [{
                 data: [30, 20, 50],
                 backgroundColor: ['#1d456d', '#2b6cb0', '#4299e1'],
-                borderWidth: 2
+                borderWidth: 2,
+                borderColor: '#fff'
             }]
         },
         options: { 
@@ -47,10 +228,11 @@ document.addEventListener('DOMContentLoaded', function () {
             plugins: { legend: { position: 'bottom' } } 
         }
     });
+}
 
-    // 3. Materials Added (Horizontal Bar)
+function initializeMaterialsChart() {
     const ctxBar = document.getElementById('materialsChart').getContext('2d');
-    new Chart(ctxBar, {
+    charts.materials = new Chart(ctxBar, {
         type: 'bar',
         data: {
             labels: ['Math', 'Psychology', 'Chemistry', 'Economics', 'Sociology'],
@@ -64,71 +246,132 @@ document.addEventListener('DOMContentLoaded', function () {
         options: { 
             indexAxis: 'y', 
             responsive: true,
-            maintainAspectRatio: false
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    beginAtZero: true
+                }
+            }
         }
     });
+}
 
-    // 4. Fine Summary (Vertical Bar)
+function initializeFinesChart() {
     const ctxFines = document.getElementById('finesChart').getContext('2d');
-    new Chart(ctxFines, {
+    charts.fines = new Chart(ctxFines, {
         type: 'bar',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+            labels: [], // Start with empty labels
             datasets: [{
                 label: 'Fines (₱)',
-                data: [120, 320, 0, 0, 0],
+                data: [], // Start with empty data
                 backgroundColor: '#3182ce',
                 borderRadius: 8
             }]
         },
         options: { 
             responsive: true, 
-            maintainAspectRatio: false 
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
         }
     });
-});
-
-function openModal() {
-    document.getElementById('addBookModal').classList.add('active');
 }
 
-function closeModal() {
-    document.getElementById('addBookModal').classList.remove('active');
-}
-
-// Close if user clicks the dark background
-window.onclick = function(event) {
-    let modal = document.getElementById('addBookModal');
-    if (event.target == modal) {
-        closeModal();
+// Function called when period changes
+async function refreshCharts(period, dateRange) {
+    const { start, end } = dateRange;
+    
+    // Update statistics cards
+    await updateStatistics(start, end);
+    
+    // Update table details
+    await updateActiveBorrowsTable(start, end);
+    await updateOverdueTable(start, end);
+    await updateTopBorrowers(start, end);
+    
+    // Update borrowing trends chart
+    const borrowingData = await fetchDashboardData('borrowingTrends', start, end, period);
+    if (borrowingData.length > 0 && charts.borrowing) {
+        const labels = borrowingData.map(d => d.date || d.label);
+        const borrows = borrowingData.map(d => d.borrows || 0);
+        const returns = borrowingData.map(d => d.returns || 0);
+        
+        charts.borrowing.data.labels = labels;
+        charts.borrowing.data.datasets[0].data = borrows;
+        charts.borrowing.data.datasets[1].data = returns;
+        charts.borrowing.update();
+    }
+    
+    // Update genre chart
+    const genreData = await fetchDashboardData('genrePopularity', start, end, period);
+    if (genreData.length > 0 && charts.genre) {
+        const labels = genreData.map(d => d.label);
+        const values = genreData.map(d => d.value || 0);
+        const colors = ['#1d456d', '#2b6cb0', '#4299e1', '#63b3ed', '#90cdf4', '#bee3f8'];
+        
+        charts.genre.data.labels = labels;
+        charts.genre.data.datasets[0].data = values;
+        charts.genre.data.datasets[0].backgroundColor = colors.slice(0, labels.length);
+        charts.genre.update();
+    }
+    
+    // Update materials chart
+    const materialsData = await fetchDashboardData('materialsAdded', start, end, period);
+    if (materialsData.length > 0 && charts.materials) {
+        const labels = materialsData.map(d => d.label);
+        const values = materialsData.map(d => d.value || 0);
+        
+        charts.materials.data.labels = labels;
+        charts.materials.data.datasets[0].data = values;
+        charts.materials.update();
+    }
+    
+    // Update fines chart
+    const finesData = await fetchDashboardData('fineSummary', start, end, period);
+    
+    if (charts.fines) {
+        let labels = [];
+        let amounts = [];
+        
+        if (finesData.length > 0) {
+            labels = finesData.map(d => d.label);
+            amounts = finesData.map(d => d.amount || 0);
+        } else {
+            // Generate appropriate empty labels based on period
+            if (period === 'week') {
+                labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            } else if (period === 'month') {
+                labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+            } else {
+                labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            }
+            amounts = new Array(labels.length).fill(0);
+        }
+        
+        charts.fines.data.labels = labels;
+        charts.fines.data.datasets[0].data = amounts;
+        charts.fines.update();
     }
 }
 
-function toggleActiveBorrows() {
-    const section = document.getElementById('activeBorrowsSection');
-    const arrow = document.getElementById('borrowArrow');
-    
-    // Toggle the hidden class
-    section.classList.toggle('hidden');
-    
-    // Rotate the arrow icon
-    arrow.classList.toggle('rotate-arrow');
+function openModal() {
+    const modal = document.getElementById('addBookModal');
+    if (modal) modal.classList.add('active');
 }
 
-function toggleDetails(sectionId, arrowId) {
-    const section = document.getElementById(sectionId);
-    const arrow = document.getElementById(arrowId);
-    
-    // Check if it's already open
-    const isOpen = !section.classList.contains('hidden');
-    
-    // Close all other details-sections first (Optional, for a cleaner UI)
-    document.querySelectorAll('.details-section').forEach(s => s.classList.add('hidden'));
-    document.querySelectorAll('.dropdown-arrow').forEach(a => a.classList.remove('rotate-arrow'));
+function closeModal() {
+    const modal = document.getElementById('addBookModal');
+    if (modal) modal.classList.remove('active');
+}
 
-    // Toggle the selected one
-    if (!isOpen) {
-        section.classList.remove('hidden');
-        arrow.classList.add('rotate-arrow');
+// Close modal if user clicks the dark background
+window.onclick = function(event) {
+    let modal = document.getElementById('addBookModal');
+    if (event.target === modal) {
+        closeModal();
     }
 }
