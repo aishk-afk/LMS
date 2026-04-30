@@ -1,65 +1,67 @@
 <?php
 header('Content-Type: application/json');
-error_reporting(0); // Prevents random text from breaking your JSON response
+error_reporting(0); 
 include 'db_config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
-        // 1. Get data from the form
+        // 1. Basic Data
         $isbn = $_POST['isbn'] ?? '';
         $title = $_POST['title'] ?? '';
         $description = $_POST['description'] ?? '';
         $image_url = $_POST['image_url'] ?? '';
+        $edition = $_POST['edition'] ?? '';
+        $price = (float) ($_POST['price'] ?? 0);
 
-        // Get the raw input from the form
+        // 2. Date Handling (Year to YYYY-MM-DD)
         $raw_pub_date = $_POST['pub_date'] ?? '';
-
-        // Check if it's just a 4-digit year (e.g., 2009)
         if (strlen($raw_pub_date) == 4 && is_numeric($raw_pub_date)) {
-            // Append January 1st to make it a valid YYYY-MM-DD
             $pub_date = $raw_pub_date . "-01-01";
         } else {
             $pub_date = $raw_pub_date;
         }
 
-        // Now use $pub_date in your $stmt->bind_param(...)
-        $edition = $_POST['edition'] ?? '';
-        $price = (float) ($_POST['price'] ?? 0);
+        // 3. PUBLISHER LOGIC (Fixing the ID issue)
+        $pub_name = $_POST['publisher_name'] ?? 'Unknown Publisher';
+        
+        // Check if publisher exists
+        $stmt_pub = $conn->prepare("SELECT publisher_id FROM Publisher WHERE publisher_name = ?");
+        $stmt_pub->bind_param("s", $pub_name);
+        $stmt_pub->execute();
+        $res_pub = $stmt_pub->get_result();
 
-        // 2. Foreign Keys (These must match the ones you just inserted in phpMyAdmin)
-        $admin_id = 1;
-        $publisher_id = 1;
+        if ($row_pub = $res_pub->fetch_assoc()) {
+            $publisher_id = $row_pub['publisher_id'];
+        } else {
+            // Insert new publisher
+            $stmt_ins_pub = $conn->prepare("INSERT INTO Publisher (publisher_name) VALUES (?)");
+            $stmt_ins_pub->bind_param("s", $pub_name);
+            $stmt_ins_pub->execute();
+            $publisher_id = $conn->insert_id;
+        }
+
+        // 4. Other Foreign Keys
+        $admin_id = 1; 
         $genre_id = (int) ($_POST['genre_id'] ?? 1);
 
-        // 3. The SQL 
+        // 5. Insert Book
         $sql = "INSERT INTO Book (ISBN, title, description, image_url, publication_date, edition, price, Admin_user_id, Genre_genre_id, Publisher_publisher_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = $conn->prepare($sql);
-        if (!$stmt)
-            throw new Exception("Prepare failed: " . $conn->error);
+        if (!$stmt) throw new Exception("Prepare failed: " . $conn->error);
 
-        // 4. Bind 10 parameters: 7 strings(s), 1 double(d), 2 integers(i)
-        // types: s s s s s s d i i i
-        $stmt->bind_param(
-            "ssssssdiii",
-            $isbn,
-            $title,
-            $description, 
-            $image_url,
-            $pub_date,
-            $edition,
-            $price,
-            $admin_id,
-            $genre_id,
-            $publisher_id
+        $stmt->bind_param("ssssssdiii", 
+            $isbn, $title, $description, $image_url, 
+            $pub_date, $edition, $price, 
+            $admin_id, $genre_id, $publisher_id
         );
 
         if ($stmt->execute()) {
             $new_book_id = $conn->insert_id;
             $num_copies = (int) ($_POST['copies'] ?? 1);
 
-            // 5. Create the physical copies in Book_Copy table
+            // 6. Create Copies
             for ($i = 0; $i < $num_copies; $i++) {
                 $conn->query("INSERT INTO Book_Copy (Book_book_id, status, `condition`) VALUES ($new_book_id, 'Available', 'New')");
             }

@@ -16,6 +16,7 @@ $result = $conn->query($query);
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,65 +28,23 @@ $result = $conn->query($query);
 
     <style>
         /* Layout Fixes */
-        .admin-container {
-            display: flex;
-            min-height: 100vh;
-            width: 100%;
-        }
-
-        .main-content {
-            flex-grow: 1;
-            padding: 30px;
-            background: #f8fafc;
-            overflow-x: hidden;
-        }
+        .admin-container { display: flex; min-height: 100vh; width: 100%; }
+        .main-content { flex-grow: 1; padding: 30px; background: #f8fafc; overflow-x: hidden; }
 
         /* Grid and Card Styling */
-        .book-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 25px;
-            margin-top: 20px;
-        }
+        .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; margin-top: 20px; }
+        .book-card { background: white; border-radius: 18px !important; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; cursor: pointer; transition: transform 0.2s ease; padding: 10px; }
+        .genre-badge { display: inline-block; color: #94a3b8; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
 
-        .genre-badge {
-            display: inline-block;
-            background: #EEF2FF; 
-            color: #4F46E5; 
-            padding: 4px 10px; 
-            border-radius: 6px; 
-            font-size: 0.7rem; 
-            font-weight: 700; 
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
+        /* Figma Pill Badges */
+        .badge { position: absolute; top: 12px; right: 12px; padding: 4px 12px !important; border-radius: 50px !important; font-size: 0.7rem !important; font-weight: 700; z-index: 10; }
+        .badge.available { background: #dcfce7 !important; color: #15803d !important; }
+        .badge.unavailable { background: #fee2e2 !important; color: #b91c1c !important; }
 
         /* Modal Styles */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-        }
-
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 2000; justify-content: center; align-items: center; }
         .modal-overlay.active { display: flex; }
-
-        .modal-container {
-            background: white;
-            width: 90%;
-            max-width: 850px;
-            max-height: 90vh;
-            overflow-y: auto;
-            border-radius: 12px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-        }
-
-        .badge.available { background: #dcfce7; color: #15803d; }
-        .badge.unavailable { background: #fee2e2; color: #b91c1c; }
+        .modal-container { background: white; width: 90%; max-width: 850px; max-height: 90vh; overflow-y: auto; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
     </style>
 </head>
 
@@ -112,29 +71,51 @@ $result = $conn->query($query);
         </aside>
 
         <main class="main-content">
-            <header class="catalog-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <div class="header-left">
-                    <h1 style="font-size: 1.8rem; color: #1e3a8a;">Library Catalog</h1>
-                    <p style="color: #64748b;">Manage and monitor your library collection.</p>
+                    <h1 style="font-size: 1.8rem; color: #1e3a8a; margin: 0;">Library Catalog</h1>
+                    <p style="color: #64748b; margin: 5px 0 0 0;">Manage and monitor your library collection.</p>
                 </div>
-                <button class="btn-add" onclick="openModal()" style="background: #1e3a8a; color: white; padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <button onclick="openModal()" style="background: #1e3a8a; color: white; padding: 12px 24px; border: none; border-radius: 50px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
                     <i class="fi fi-rr-plus"></i> Add New Material
                 </button>
-            </header>
+            </div>
+
+            <div class="filter-bar" style="display: flex; gap: 12px; align-items: center; background: white; padding: 10px 20px; border-radius: 50px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 30px;">
+                <div style="flex-grow: 1; position: relative;">
+                    <i class="fi fi-rr-search" style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                    <input type="text" id="catalogSearch" placeholder="Search by title, author, or keyword..."
+                        style="width: 100%; padding: 12px 12px 12px 45px; border: 1px solid #e2e8f0; border-radius: 50px; outline: none;">
+                </div>
+
+                <div style="display: flex; align-items: center; border-left: 1px solid #e2e8f0; padding-left: 15px;">
+                    <i class="fi fi-rr-filter" style="color: #94a3b8; margin-right: 8px;"></i>
+                    <select id="filterGenre" style="border: none; color: #64748b; background: white; cursor: pointer; outline: none;">
+                        <option value="all">All Genres</option>
+                        <?php
+                        $genres_result->data_seek(0);
+                        while ($g = $genres_result->fetch_assoc()): ?>
+                            <option value="<?php echo htmlspecialchars($g['genre_name']); ?>"><?php echo htmlspecialchars($g['genre_name']); ?></option>
+                        <?php endwhile; ?>
+                    </select>
+                </div>
+
+                <select id="filterStatus" style="padding: 8px 15px; border: 1px solid #e2e8f0; border-radius: 50px; color: #64748b; background: white; cursor: pointer; outline: none;">
+                    <option value="all">All Status</option>
+                    <option value="Available">Available</option>
+                    <option value="Unavailable">Unavailable</option>
+                </select>
+            </div>
 
             <div class="book-grid">
                 <?php if ($result && $result->num_rows > 0): ?>
-                    <?php while ($row = $result->fetch_assoc()): 
-                        $isAvailable = ($row['copies'] > 0);
-                    ?>
-                        <div class="book-card" onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'"
-                            style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); overflow: hidden; cursor: pointer;">
-                            
-                            <div class="book-image" style="height: 250px; position: relative;">
+                    <?php while ($row = $result->fetch_assoc()):
+                        $isAvailable = ($row['copies'] > 0); ?>
+                        <div class="book-card" data-genre="<?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?>" onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'">
+                            <div class="book-image" style="height: 260px; position: relative; border-radius: 14px; overflow: hidden;">
                                 <img src="<?php echo htmlspecialchars($row['image_url']); ?>" style="width: 100%; height: 100%; object-fit: cover;">
-                                <span class="badge <?php echo $isAvailable ? 'available' : 'unavailable'; ?>" 
-                                      style="position: absolute; top: 10px; right: 10px; padding: 5px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
-                                    <?php echo $isAvailable ? 'Available' : 'Out of Stock'; ?>
+                                <span class="badge <?php echo $isAvailable ? 'available' : 'unavailable'; ?>">
+                                    <?php echo $isAvailable ? "Available (" . $row['copies'] . ")" : "Unavailable"; ?>
                                 </span>
                             </div>
 
@@ -199,7 +180,7 @@ $result = $conn->query($query);
                             <label style="font-weight:600;">Genre</label>
                             <select id="bookGenre" style="width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;">
                                 <option value="">Select Genre</option>
-                                <?php 
+                                <?php
                                 $genres_result->data_seek(0);
                                 while ($genre = $genres_result->fetch_assoc()): ?>
                                     <option value="<?php echo $genre['genre_id']; ?>"><?php echo $genre['genre_name']; ?></option>
@@ -230,7 +211,6 @@ $result = $conn->query($query);
             const query = document.getElementById('apiSearchInput').value;
             const resultsDiv = document.getElementById('apiResults');
             if (!query) return alert("Enter a title first!");
-
             resultsDiv.innerHTML = "Searching...";
             try {
                 const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}`);
@@ -249,7 +229,6 @@ $result = $conn->query($query);
                         document.getElementById('modalPublisher').value = info.publisher || '';
                         document.getElementById('modalYear').value = info.publishedDate ? info.publishedDate.split('-')[0] : '';
                         document.getElementById('bookDescription').value = info.description || '';
-                        
                         const prevImg = document.getElementById('modalPreviewImg');
                         prevImg.src = cover;
                         prevImg.style.display = 'block';
@@ -263,29 +242,64 @@ $result = $conn->query($query);
         document.getElementById('bookForm').onsubmit = async function (e) {
             e.preventDefault();
             const formData = new FormData();
-
             formData.append('title', document.getElementById('apiSearchInput').value);
             formData.append('isbn', document.getElementById('modalISBN').value);
             formData.append('image_url', document.getElementById('modalCover').value);
             formData.append('copies', document.getElementById('modalCopies').value);
-            formData.append('price', '0'); // Defaulting price if hidden
+            formData.append('price', '0');
             formData.append('edition', document.getElementById('modalEdition').value);
             formData.append('pub_date', document.getElementById('modalYear').value);
             formData.append('description', document.getElementById('bookDescription').value);
             formData.append('genre_id', document.getElementById('bookGenre').value);
-            formData.append('publisher_name', document.getElementById('modalPublisher').value);
 
             try {
                 const response = await fetch('save_book.php', { method: 'POST', body: formData });
-                const result = await response.json();
+                const text = await response.text();
+                const result = JSON.parse(text);
                 if (result.status === 'success') {
-                    alert("Book Added Successfully!");
+                    alert("Book Added!");
                     location.reload();
                 } else {
                     alert("Error: " + result.message);
                 }
-            } catch (err) { alert("Server error. Check console."); console.error(err); }
+            } catch (err) { console.error(err); }
         };
+
+        // FIXED FILTERING LOGIC
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('catalogSearch');
+            const genreFilter = document.getElementById('filterGenre');
+            const statusFilter = document.getElementById('filterStatus');
+            const bookCards = document.querySelectorAll('.book-card');
+
+            function filterBooks() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedGenre = genreFilter.value;
+                const selectedStatus = statusFilter.value;
+
+                bookCards.forEach(card => {
+                    const title = card.querySelector('h3').innerText.toLowerCase();
+                    const genre = card.getAttribute('data-genre'); // Using data attribute for safety
+                    const badgeText = card.querySelector('.badge').innerText; // e.g. "Available (5)"
+
+                    const matchesSearch = title.includes(searchTerm);
+                    const matchesGenre = (selectedGenre === 'all' || genre === selectedGenre);
+                    
+                    // Fixed status logic using includes()
+                    let matchesStatus = (selectedStatus === 'all' || badgeText.includes(selectedStatus));
+
+                    if (matchesSearch && matchesGenre && matchesStatus) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+
+            searchInput.addEventListener('input', filterBooks);
+            genreFilter.addEventListener('change', filterBooks);
+            statusFilter.addEventListener('change', filterBooks);
+        });
     </script>
 </body>
 </html>
