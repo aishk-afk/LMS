@@ -223,6 +223,27 @@ if ($type === 'overdueDetails') {
     exit;
 }
 
+//Fine summary
+
+if ($type === 'fineSummary') {
+    $collectedSql = "SELECT COALESCE (SUM(f.amount_paid), 0) as collected FROM fine f";
+    $collectedResult = mysqli_query ($conn, $collectedSql);
+    $collected = intval(mysqli_fetch_assoc($collectedResult)['collected'] ?? 0);
+    $pendingSql = "SELECT COALESCE (SUM(f.balance), 0) as pending FROM fine f WHERE f.balance > 0";
+    $pendingResult = mysqli_query ($conn, $pendingSql);
+    $pending = intval(mysqli_fetch_assoc($pendingResult)['pending'] ?? 0);
+
+    $totalSql = "SELECT COALESCE (SUM(f.total_amount_accrued), 0) as total FROM fine f";
+    $totalResult = mysqli_query ($conn, $totalSql);
+    $total = intval(mysqli_fetch_assoc($totalResult)['total'] ?? 0);
+    echo json_encode([
+        'collected' => $collected,
+        'pending' => $pending,
+        'total' => $total
+    ]);
+    exit;
+}
+
 // Default response
 echo json_encode(['error' => 'Invalid request type']);
 ?>
