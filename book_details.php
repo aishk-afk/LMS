@@ -1,71 +1,228 @@
 <?php
-include 'db_config.php'; // Use your shared connection file
+// 1. Database Connection & Logic
+include 'db_config.php';
 
-$book_id = isset($_GET['id']) ? $_GET['id'] : die("Book ID not specified.");
+// Get the ID from URL and sanitize it
+$id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-$sql = "SELECT book.*, publisher.publisher_name 
-        FROM book 
-        JOIN publisher ON book.Publisher_publisher_id = publisher.publisher_id 
-        WHERE book.book_id = ?";
-        
-// Fetch full book details
-$stmt = $conn->prepare("SELECT * FROM book WHERE book_id = ?");
-$stmt->bind_param("i", $book_id);
+if ($id <= 0) {
+    die("Invalid Book ID.");
+}
+
+// Optimized Query: Fetches Book details, Publisher name, and Genre name
+$query = "SELECT b.*, 
+          p.publisher_name, 
+          g.genre_name,
+          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id) as total_copies,
+          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id AND status = 'Available') as available_copies
+          FROM Book b
+          LEFT JOIN Publisher p ON b.Publisher_publisher_id = p.publisher_id
+          LEFT JOIN Genre g ON b.Genre_genre_id = g.genre_id
+          WHERE b.book_id = ?";
+
+$stmt = $conn->prepare($query);
+$stmt->bind_param("i", $id);
 $stmt->execute();
-$result = $stmt->get_result();
-$book = $result->fetch_assoc();
+$row = $stmt->get_result()->fetch_assoc();
 
-if (!$book) { die("Book not found."); }
+if (!$row) {
+    die("Book not found in the library database.");
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <title><?php echo $book['title']; ?> - Details</title>
-    <link rel="stylesheet" href="css/admin.css">
-    <link rel="stylesheet" href="css/sidebar.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($row['title']); ?> - Library Hub</title>
+    <link rel="stylesheet" href="style.css">
     <style>
-        .details-container { padding: 40px; display: flex; gap: 40px; background: #fff; border-radius: 15px; margin-top: 20px; }
-        .details-left img { width: 300px; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
-        .details-right { flex: 1; }
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; background: #f8fafc; padding: 20px; border-radius: 10px; margin-top: 30px; }
-        .meta-item label { display: block; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
-        .meta-item span { font-weight: 600; color: #1e293b; }
-        .back-link { text-decoration: none; color: #64748b; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+        .details-container {
+            display: flex;
+            gap: 50px;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Fixed Scaling for Image */
+        .book-visual {
+            flex: 0 0 320px;
+        }
+
+        .book-visual img {
+            width: 100%;
+            height: auto;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            display: block;
+        }
+
+        .book-content {
+            flex: 1;
+        }
+
+        .tag-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .badge {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-genre {
+            background: #EEF2FF;
+            color: #4F46E5;
+        }
+
+        .badge-ref {
+            background: #E0F2FE;
+            color: #0369A1;
+        }
+
+        .book-title {
+            font-size: 32px;
+            font-weight: 800;
+            color: #111827;
+            margin: 0 0 8px 0;
+        }
+
+        .book-edition {
+            color: #6B7280;
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .book-author {
+            font-size: 16px;
+            color: #4B5563;
+            margin-bottom: 24px;
+        }
+
+        .book-author span {
+            color: #111827;
+            font-weight: 600;
+        }
+
+        .book-desc {
+            line-height: 1.7;
+            color: #4B5563;
+            margin-bottom: 32px;
+            font-size: 15px;
+        }
+
+        /* Stats Grid - Matches Figma */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            background: #F9FAFB;
+            padding: 24px;
+            border-radius: 16px;
+        }
+
+        .stat-item label {
+            display: block;
+            font-size: 10px;
+            font-weight: 700;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .stat-item div {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .status-pill {
+            color:
+                <?php echo ($row['available_copies'] > 0) ? '#059669' : '#DC2626'; ?>
+            ;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            text-decoration: none;
+            color: #6B7280;
+            font-size: 14px;
+        }
     </style>
 </head>
-<body class="admin-container">
-    <?php include 'sidebar.php'; // It is cleaner to put your sidebar in a separate file and include it ?>
-    
-    <main class="main-content">
-        <a href="admin_catalog.php" class="back-link">← Back to Catalog</a>
-        
-        <div class="details-container">
-            <div class="details-left">
-                <img src="<?php echo $book['image_url']; ?>" alt="Cover">
-            </div>
-            
-            <div class="details-right">
-                <span class="badge" style="background:#e0e7ff; color:#4338ca; padding:4px 12px; border-radius:20px; font-size:0.8rem;">
-                    <?php echo $book['Genre_genre_id']; ?>
-                </span>
-                <h1 style="font-size: 2.5rem; margin: 15px 0 5px;"><?php echo $book['title']; ?></h1>
-                <p style="color: #64748b; font-size: 1.1rem;">By <?php echo $book['author']; ?></p>
-                
-                <p style="margin-top: 25px; line-height: 1.6; color: #475569;">
-                    <?php echo $book['description']; ?>
-                </p>
 
-                <div class="meta-grid">
-                    <div class="meta-item"><label>Publisher</label><span><?php echo $book['publisher_name']; ?></span></div>
-                    <div class="meta-item"><label>Copyright Year</label><span><?php echo $book['pub_date']; ?></span></div>
-                    <div class="meta-item"><label>ISBN</label><span><?php echo $book['isbn']; ?></span></div>
-                    <div class="meta-item"><label>Edition</label><span><?php echo $book['edition']; ?></span></div>
-                    <div class="meta-item"><label>Status</label><span><?php echo ($book['copies'] > 0) ? 'Available' : 'Unavailable'; ?></span></div>
+<body>
+
+    <div class="details-container">
+        <div class="book-visual">
+            <a href="admin_catalog.php" class="back-link">← Back to Catalog</a>
+            <img src="<?php echo htmlspecialchars($row['image_url']); ?>" alt="Cover">
+        </div>
+
+        <div class="book-content">
+            <div class="tag-row">
+                <span class="badge badge-genre"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
+                <span class="badge badge-ref">Reference</span>
+            </div>
+
+            <h1 class="book-title"><?php echo htmlspecialchars($row['title']); ?></h1>
+            <div class="book-edition"><?php echo htmlspecialchars($row['edition'] ?? 'Standard Edition'); ?></div>
+
+            <p class="book-author">By <span>James Dashner</span></p>
+
+            <p class="book-desc"><?php echo nl2br(htmlspecialchars($row['description'])); ?></p>
+
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <label>Publisher</label>
+                    <div><?php echo htmlspecialchars($row['publisher_name'] ?? 'N/A'); ?></div>
+                </div>
+                <div class="stat-item">
+                    <label>Publication Year</label>
+                    <div>
+                        <?php
+                        if (!empty($row['publication_date']) && $row['publication_date'] != '0000-00-00') {
+                            // This converts "2009-01-01" back to just "2009"
+                            echo date('Y', strtotime($row['publication_date']));
+                        } else {
+                            echo "N/A";
+                        }
+                        ?>
+                    </div>
+                </div>
+                <div class="stat-item">
+                    <label>ISBN</label>
+                    <div><?php echo htmlspecialchars($row['ISBN']); ?></div>
+                </div>
+                <div class="stat-item">
+                    <label>Edition</label>
+                    <div><?php echo htmlspecialchars($row['edition'] ?? '1st'); ?></div>
+                </div>
+                <div class="stat-item">
+                    <label>Copies</label>
+                    <div><?php echo $row['available_copies'] . ' / ' . $row['total_copies']; ?></div>
+                </div>
+                <div class="stat-item">
+                    <label>Status</label>
+                    <div class="status-pill">
+                        <?php echo ($row['available_copies'] > 0) ? 'Available' : 'Out of Stock'; ?>
+                    </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
+
 </body>
+
 </html>
