@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Settings</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <style>
+        /* --- SETTINGS SPECIFIC STYLES --- */
+        .settings-container {
+            max-width: 900px;
+            margin-top: 20px;
+        }
+
+        .config-card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+        }
+
+        .config-header {
+            background: #1e40af; /* Deep Blue from Figma */
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            color: white;
+        }
+
+        .config-header i {
+            font-size: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        .config-header h3 { margin: 0; font-size: 20px; }
+        .config-header p { margin: 4px 0 0; font-size: 14px; opacity: 0.8; }
+
+        .config-body {
+            padding: 32px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .input-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .input-label-row label {
+            font-weight: 700;
+            color: #1e293b;
+            font-size: 14px;
+        }
+
+        .unit-label {
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .custom-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-prefix {
+            position: absolute;
+            left: 16px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .custom-input {
+            width: 100%;
+            padding: 14px 16px 14px 40px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            color: #1e293b;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .input-help-text {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .config-footer {
+            padding: 0 32px 32px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-save-config {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-save-config:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="applogo(2).png" alt="Logo" class="logo-icon">
+                <h2 class="brand-name">Library Learning Management Hub</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item"><a href="admin_dashboard.html"><i class="fi fi-rr-home"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
+                    <li class="nav-item"><a href="admin_users.html"><i class="fi fi-rr-users-alt"></i> Users</a></li>
+                    <li class="nav-item"><a href="admin_waitlist.html"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
+                    <li class="nav-item active"><a href="#"><i class="fi fi-rr-settings"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-profile">
+                    <strong>Admin User</strong><br><small>Admin</small>
+                </div>
+                <a href="index.html" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="overview-header" style="margin-bottom: 30px;">
+                <h1 style="font-size: 28px; margin: 0;">System Configuration</h1>
+                <p style="color: #64748b; margin: 4px 0 0;">Manage global library rules and fine rates.</p>
+            </header>
+
+            <div class="settings-container">
+                <div class="config-card">
+                    <div class="config-header">
+                        <i class="fi fi-rr-credit-card"></i>
+                        <div>
+                            <h3>Fine Computations</h3>
+                            <p>Set daily penalty rates in PHP (₱)</p>
+                        </div>
+                    </div>
+
+                    <form class="config-body">
+                        <div class="input-group">
+                            <div class="input-label-row">
+                                <label>Home-Use Resources</label>
+                                <span class="unit-label">₱ / Day</span>
+                            </div>
+                            <div class="custom-input-wrapper">
+                                <span class="input-prefix">₱</span>
+                                <input type="number" class="custom-input" value="3">
+                            </div>
+                            <span class="input-help-text">Standard borrowing rate for home-use.</span>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label-row">
+                                <label>Classroom-Use Materials</label>
+                                <span class="unit-label">₱ / Day</span>
+                            </div>
+                            <div class="custom-input-wrapper">
+                                <span class="input-prefix">₱</span>
+                                <input type="number" class="custom-input" value="20">
+                            </div>
+                            <span class="input-help-text">Penalty for overdue classroom materials.</span>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label-row">
+                                <label>Reference & Reserved</label>
+                                <span class="unit-label">₱ / Day</span>
+                            </div>
+                            <div class="custom-input-wrapper">
+                                <span class="input-prefix">₱</span>
+                                <input type="number" class="custom-input" value="20">
+                            </div>
+                            <span class="input-help-text">High penalty for critical references.</span>
+                        </div>
+
+                        <div class="input-group">
+                            <div class="input-label-row">
+                                <label>Max Borrow Duration</label>
+                                <span class="unit-label">Days</span>
+                            </div>
+                            <div class="custom-input-wrapper">
+                                <input type="number" class="custom-input" style="padding-left: 16px;" value="14">
+                            </div>
+                            <span class="input-help-text">Standard borrowing period before fines.</span>
+                        </div>
+                    </form>
+
+                    <div class="config-footer">
+                        <button class="btn-save-config">
+                            <i class="fi fi-rr-disk"></i>
+                            Save Configuration
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

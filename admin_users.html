@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System - Library Members</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/sidebar.css">
+    <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <style>
+        /* --- USERS PAGE SPECIFIC STYLES --- */
+        .member-card {
+            background: white;
+            border: 1px solid #f1f5f9;
+            border-radius: 20px;
+            padding: 16px 24px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .member-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .member-main-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex: 1;
+        }
+
+        .member-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #eff6ff;
+            color: #2563eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .member-details h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #1e293b;
+        }
+
+        .member-details p {
+            margin: 2px 0 0;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .member-college {
+            flex: 1.5;
+            text-align: left;
+        }
+
+        .member-college span {
+            display: block;
+            font-size: 12px;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+
+        .member-college strong {
+            font-size: 14px;
+            color: #475569;
+            font-weight: 500;
+        }
+
+        .member-stats {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Badges from Figma */
+        .badge-role {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-student { background: #f5f3ff; color: #7c3aed; }
+        .role-faculty { background: #fff7ed; color: #ea580c; }
+
+        .stat-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .stat-badge.overdue {
+            background: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fecaca;
+        }
+
+        .expand-btn {
+            color: #cbd5e1;
+            font-size: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <img src="applogo(2).png" alt="Logo" class="logo-icon">
+                <h2 class="brand-name">Library Learning Management Hub</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item"><a href="admin_dashboard.html"><i class="fi fi-rr-home"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
+                    <li class="nav-item active"><a href="#"><i class="fi fi-rr-users-alt"></i> Users</a></li>
+                    <li class="nav-item"><a href="admin_waitlist.html"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
+                    <li class="nav-item"><a href="admin_settings.html"><i class="fi fi-rr-settings"></i> Settings</a></li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="admin-profile">
+                    <strong>Admin User</strong><br><small>Admin</small>
+                </div>
+                <a href="index.html" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="overview-header" style="margin-bottom: 30px;">
+                <h1 style="font-size: 28px; margin: 0;">Library Members</h1>
+                <p style="color: #64748b; margin: 4px 0 0;">Manage users, view borrowed books, and issue returns.</p>
+            </header>
+
+            <section class="members-list">
+                
+                <div class="member-card">
+                    <div class="member-main-info">
+                        <div class="member-avatar">J</div>
+                        <div class="member-details">
+                            <h4>Jane Doe</h4>
+                            <p>student@lib.edu</p>
+                        </div>
+                    </div>
+                    <div class="member-college">
+                        <span>College & Section</span>
+                        <strong>College of Computer Studies · Sec A</strong>
+                    </div>
+                    <div class="member-stats">
+                        <span class="badge-role role-student">Student</span>
+                        <div class="stat-badge"><i class="fi fi-rr-book-alt"></i> 1</div>
+                        <div class="stat-badge overdue"><i class="fi fi-rr-exclamation"></i> 1 overdue</div>
+                        <i class="fi fi-rr-angle-small-down expand-btn"></i>
+                    </div>
+                </div>
+
+                <div class="member-card">
+                    <div class="member-main-info">
+                        <div class="member-avatar" style="background: #fff7ed; color: #ea580c;">D</div>
+                        <div class="member-details">
+                            <h4>Dr. Smith</h4>
+                            <p>faculty@lib.edu</p>
+                        </div>
+                    </div>
+                    <div class="member-college">
+                        <span>College & Section</span>
+                        <strong>College of Arts and Sciences · Sec N/A</strong>
+                    </div>
+                    <div class="member-stats">
+                        <span class="badge-role role-faculty">Faculty</span>
+                        <div class="stat-badge"><i class="fi fi-rr-book-alt"></i> 1</div>
+                        <div class="stat-badge overdue"><i class="fi fi-rr-exclamation"></i> 1 overdue</div>
+                        <i class="fi fi-rr-angle-small-down expand-btn"></i>
+                    </div>
+                </div>
+
+                <div class="member-card">
+                    <div class="member-main-info">
+                        <div class="member-avatar" style="background: #ecfeff; color: #0891b2;">C</div>
+                        <div class="member-details">
+                            <h4>Carlos Rivera</h4>
+                            <p>carlos@lib.edu</p>
+                        </div>
+                    </div>
+                    <div class="member-college">
+                        <span>College & Section</span>
+                        <strong>College of Nursing · Sec B</strong>
+                    </div>
+                    <div class="member-stats">
+                        <span class="badge-role role-student">Student</span>
+                        <div class="stat-badge"><i class="fi fi-rr-book-alt"></i> 0</div>
+                        <i class="fi fi-rr-angle-small-down expand-btn"></i>
+                    </div>
+                </div>
+
+                <div class="member-card">
+                    <div class="member-main-info">
+                        <div class="member-avatar" style="background: #fdf2f8; color: #db2777;">M</div>
+                        <div class="member-details">
+                            <h4>Maria Santos</h4>
+                            <p>maria@lib.edu</p>
+                        </div>
+                    </div>
+                    <div class="member-college">
+                        <span>College & Section</span>
+                        <strong>College of Engineering and Architecture · Sec A</strong>
+                    </div>
+                    <div class="member-stats">
+                        <span class="badge-role role-student">Student</span>
+                        <div class="stat-badge"><i class="fi fi-rr-book-alt"></i> 0</div>
+                        <i class="fi fi-rr-angle-small-down expand-btn"></i>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,140 @@
+/* --- SEARCH & FILTER BAR --- */
+.catalog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.search-container {
+    position: relative;
+    width: 400px;
+}
+
+.search-container i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 12px 12px 45px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    font-size: 14px;
+}
+
+/* --- BOOK GRID --- */
+.book-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+}
+
+.book-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    border: 1px solid #f1f5f9;
+    transition: transform 0.2s;
+}
+
+.book-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+.book-cover {
+    width: 100%;
+    height: 200px;
+    background: #f8fafc;
+    border-radius: 12px;
+    object-fit: contain;
+    margin-bottom: 16px;
+}
+
+.book-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    color: #1e293b;
+}
+
+.book-info p {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 16px;
+}
+
+/* --- ACTION BUTTONS --- */
+.card-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.btn-borrow {
+    flex: 1;
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-details {
+    padding: 10px 15px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+}
+
+/* --- MODAL FORM ACTIONS --- */
+/* This fixes the "floating" buttons you see in your screenshot */
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end; /* Aligns buttons to the bottom right */
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #f1f5f9; /* Separates form from buttons */
+    grid-column: 1 / -1; /* Ensures it spans across the whole modal width */
+}
+
+.btn-cancel {
+    padding: 10px 24px;
+    border-radius: 8px;
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-publish {
+    padding: 10px 24px;
+    border-radius: 8px;
+    background: #1e3a8a; /* Your primary sidebar blue */
+    color: white;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-publish:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+.btn-cancel:hover {
+    background: #e2e8f0;
+}
