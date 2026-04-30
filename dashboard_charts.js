@@ -41,14 +41,13 @@ async function updateStatistics(startDate, endDate) {
     }
 }
 
-// Update fine dislay
-
+// Update fine summary display
 async function updateFineSummary() {
     try {
-        const fineSummary = await fetchDashboardData ('fineSummary', '','',);
-        const summaryElement = document.querySelector('.card small');
-        if (summaryElemeent) {
-            summaryElement.textContent = 'Collected: ₱${fineSummary.collected || 0} · Pending: ₱${fineSummary.pending || 0} · Total: ₱${fineSummary.total || 0}';
+        const fineSummary = await fetchDashboardData('fineSummary', '', '');
+        const summaryElement = document.querySelector('.dashboard-row.single .card small');
+        if (summaryElement) {
+            summaryElement.textContent = `Collected: ₱${fineSummary.collected || 0} · Pending: ₱${fineSummary.pending || 0} · Total: ₱${fineSummary.total || 0}`;
         }
     } catch (error) {
         console.error('Error updating fine summary:', error);
@@ -284,6 +283,9 @@ async function refreshCharts(period, dateRange) {
     
     // Update statistics cards
     await updateStatistics(start, end);
+    
+    // Update fine summary
+    await updateFineSummary();
     
     // Update table details
     await updateActiveBorrowsTable(start, end);

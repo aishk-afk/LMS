@@ -1,10 +1,25 @@
 <?php
+<<<<<<< HEAD
+=======
 // 1. Database Connection & Logic
+>>>>>>> e251dcb09740a4fe6163f9e6274a984565e1ca4f
 include 'db_config.php';
 
 // Get the ID from URL and sanitize it
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
+<<<<<<< HEAD
+$sql = "SELECT book.*, 
+               publisher.publisher_name,
+               genre.genre_name
+        FROM book 
+        LEFT JOIN publisher ON book.Publisher_publisher_id = publisher.publisher_id
+        LEFT JOIN genre ON book.Genre_genre_id = genre.genre_id
+        WHERE book.book_id = ?";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $book_id);
+=======
 if ($id <= 0) {
     die("Invalid Book ID.");
 }
@@ -22,9 +37,14 @@ $query = "SELECT b.*,
 
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $id);
+>>>>>>> e251dcb09740a4fe6163f9e6274a984565e1ca4f
 $stmt->execute();
 $row = $stmt->get_result()->fetch_assoc();
 
+<<<<<<< HEAD
+if (!$book) { die("Book not found."); }
+?>
+=======
 if (!$row) {
     die("Book not found in the library database.");
 }
@@ -226,3 +246,4 @@ if (!$row) {
 </body>
 
 </html>
+>>>>>>> e251dcb09740a4fe6163f9e6274a984565e1ca4f
