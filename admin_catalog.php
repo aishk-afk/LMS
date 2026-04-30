@@ -122,7 +122,6 @@ $result = $conn->query($query);
                             <div class="book-details" style="padding: 15px;">
                                 <span class="genre-badge"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
                                 <h3 style="font-size: 1rem; margin: 5px 0; color: #1e293b;"><?php echo htmlspecialchars($row['title']); ?></h3>
-                                <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Copies: <?php echo $row['copies']; ?></p>
                             </div>
                         </div>
                     <?php endwhile; ?>
