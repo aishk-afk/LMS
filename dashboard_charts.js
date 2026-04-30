@@ -110,28 +110,26 @@ async function updateOverdueTable(startDate, endDate) {
 async function updateTopBorrowers(startDate, endDate) {
     try {
         const data = await fetchDashboardData('topBorrowers', startDate, endDate);
-        const container = document.querySelector('.dashboard-row.equal .card:first-child .borrower-item')?.parentElement;
+        const container = document.getElementById('topBorrowersList');
         
         if (!container) return;
+        container.innerHTML = '';
 
-        // Clear existing entries but keep the structure
-        const parentCard = container.closest('.card');
-        const borrowersList = parentCard.querySelectorAll('.borrower-item');
-        borrowersList.forEach((item, index) => {
-            if (index > 0) item.remove(); // Keep first one, remove others
-        });
+        if (data.length === 0) {
+            container.innerHTML = '<div class="borrower-item" style="display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;"><div style="color:#64748b;">No top borrowers found for this period.</div></div>';
+            return;
+        }
 
-        // Add new borrowers (limit to 3 for display)
-        data.slice(0, 3).forEach(row => {
+        data.slice(0, 5).forEach(row => {
             const div = document.createElement('div');
             div.className = 'borrower-item';
             div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;';
             
-            const initials = row.user_id.substring(0, 1).toUpperCase();
+            const initials = row.user_id ? row.user_id.substring(0, 1).toUpperCase() : '?';
             div.innerHTML = `
                 <div style="display:flex; align-items:center; gap:12px;">
                     <div class="avatar" style="background:#eff6ff; color:#3b82f6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">${initials}</div>
-                    <div><strong>${row.user_id}</strong><br><small style="color:#64748b;">User</small></div>
+                    <div><strong>${row.user_id}</strong><br><small style="color:#64748b;">Borrowed ${row.borrow_count} books</small></div>
                 </div>
                 <span style="font-weight:600; color:#3b82f6;">${row.borrow_count}x</span>
             `;
@@ -140,23 +138,6 @@ async function updateTopBorrowers(startDate, endDate) {
     } catch (error) {
         console.error('Error updating top borrowers:', error);
     }
-}
-
-// Sample data generators (fallback if no data)
-function generateWeeklyData() {
-    const today = new Date();
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(date.getDate() - i);
-        days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-    }
-    
-    return {
-        labels: days,
-        borrows: [45, 28, 52, 31, 49, 35, 28],
-        returns: [12, 32, 28, 5, 45, 43, 20]
-    };
 }
 
 // Initialize charts
@@ -169,15 +150,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function initializeBorrowingChart() {
     const ctxLine = document.getElementById('borrowingChart').getContext('2d');
-    const data = generateWeeklyData();
     
     charts.borrowing = new Chart(ctxLine, {
         type: 'line',
         data: {
-            labels: data.labels,
+            labels: [],
             datasets: [{
                 label: 'Borrows',
-                data: data.borrows,
+                data: [],
                 borderColor: '#3182ce',
                 backgroundColor: 'rgba(49, 130, 206, 0.1)',
                 tension: 0.4,
@@ -186,7 +166,7 @@ function initializeBorrowingChart() {
                 pointBackgroundColor: '#3182ce'
             }, {
                 label: 'Returns',
-                data: data.returns,
+                data: [],
                 borderColor: '#38a169',
                 backgroundColor: 'rgba(56, 161, 105, 0.1)',
                 tension: 0.4,
@@ -210,13 +190,16 @@ function initializeBorrowingChart() {
 
 function initializeGenreChart() {
     const ctxDoughnut = document.getElementById('genreChart').getContext('2d');
+    const defaultLabels = ['Biology', 'History', 'Political Science', 'Mathematics', 'Literature'];
+    const defaultColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8'];
+
     charts.genre = new Chart(ctxDoughnut, {
         type: 'doughnut',
         data: {
-            labels: ['Biology', 'History', 'Political Science'],
+            labels: defaultLabels,
             datasets: [{
-                data: [30, 20, 50],
-                backgroundColor: ['#1d456d', '#2b6cb0', '#4299e1'],
+                data: [0, 0, 0, 0, 0],
+                backgroundColor: defaultColors,
                 borderWidth: 2,
                 borderColor: '#fff'
             }]
@@ -235,10 +218,10 @@ function initializeMaterialsChart() {
     charts.materials = new Chart(ctxBar, {
         type: 'bar',
         data: {
-            labels: ['Math', 'Psychology', 'Chemistry', 'Economics', 'Sociology'],
+            labels: [],
             datasets: [{
                 label: 'Items',
-                data: [6, 5, 4, 3, 3],
+                data: [],
                 backgroundColor: '#4299e1',
                 borderRadius: 5
             }]
@@ -295,10 +278,10 @@ async function refreshCharts(period, dateRange) {
     
     // Update borrowing trends chart
     const borrowingData = await fetchDashboardData('borrowingTrends', start, end, period);
-    if (borrowingData.length > 0 && charts.borrowing) {
-        const labels = borrowingData.map(d => d.date || d.label);
-        const borrows = borrowingData.map(d => d.borrows || 0);
-        const returns = borrowingData.map(d => d.returns || 0);
+    if (charts.borrowing) {
+        const labels = borrowingData.length > 0 ? borrowingData.map(d => d.date || d.label) : [];
+        const borrows = borrowingData.length > 0 ? borrowingData.map(d => d.borrows || 0) : [];
+        const returns = borrowingData.length > 0 ? borrowingData.map(d => d.returns || 0) : [];
         
         charts.borrowing.data.labels = labels;
         charts.borrowing.data.datasets[0].data = borrows;
@@ -308,22 +291,24 @@ async function refreshCharts(period, dateRange) {
     
     // Update genre chart
     const genreData = await fetchDashboardData('genrePopularity', start, end, period);
-    if (genreData.length > 0 && charts.genre) {
-        const labels = genreData.map(d => d.label);
-        const values = genreData.map(d => d.value || 0);
-        const colors = ['#1d456d', '#2b6cb0', '#4299e1', '#63b3ed', '#90cdf4', '#bee3f8'];
+    if (charts.genre) {
+        const defaultLabels = ['Biology', 'History', 'Political Science', 'Mathematics', 'Literature'];
+        const defaultColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2', '#F8B88B', '#A8E6CF'];
+        const labels = genreData.length > 0 ? genreData.map(d => d.label) : defaultLabels;
+        const values = genreData.length > 0 ? genreData.map(d => d.value || 0) : new Array(defaultLabels.length).fill(0);
+        const colors = defaultColors.slice(0, labels.length);
         
         charts.genre.data.labels = labels;
         charts.genre.data.datasets[0].data = values;
-        charts.genre.data.datasets[0].backgroundColor = colors.slice(0, labels.length);
+        charts.genre.data.datasets[0].backgroundColor = colors;
         charts.genre.update();
     }
     
     // Update materials chart
     const materialsData = await fetchDashboardData('materialsAdded', start, end, period);
-    if (materialsData.length > 0 && charts.materials) {
-        const labels = materialsData.map(d => d.label);
-        const values = materialsData.map(d => d.value || 0);
+    if (charts.materials) {
+        const labels = materialsData.length > 0 ? materialsData.map(d => d.label) : [];
+        const values = materialsData.length > 0 ? materialsData.map(d => d.value || 0) : [];
         
         charts.materials.data.labels = labels;
         charts.materials.data.datasets[0].data = values;

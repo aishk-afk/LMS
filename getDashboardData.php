@@ -10,6 +10,8 @@ $period = isset($_GET['period']) ? $_GET['period'] : 'week';
 // Validate and sanitize date format
 $startDate = date('Y-m-d', strtotime($startDate));
 $endDate = date('Y-m-d', strtotime($endDate));
+$startYear = intval(date('Y', strtotime($startDate)));
+$endYear = intval(date('Y', strtotime($endDate)));
 
 // Function to execute query and return data
 function executeQuery($conn, $sql) {
@@ -108,10 +110,11 @@ if ($type === 'borrowingTrends') {
 if ($type === 'genrePopularity') {
     $sql = "SELECT g.genre_name as label, COUNT(bt.borrow_id) as value
             FROM genre g
-            LEFT JOIN book b ON g.genre_id = b.Genre_genre_id
-            LEFT JOIN book_copy bc ON b.book_id = bc.Book_book_id
-            LEFT JOIN book_transaction bt ON bc.copy_id = bt.Book_Copy_copy_id 
-            AND (bt.borrow_date BETWEEN '$startDate' AND '$endDate')
+            INNER JOIN book b ON g.genre_id = b.Genre_genre_id
+            INNER JOIN book_copy bc ON b.book_id = bc.Book_book_id
+            INNER JOIN book_transaction bt ON bc.copy_id = bt.Book_Copy_copy_id
+            WHERE DATE(bt.borrow_date) >= '$startDate'
+              AND DATE(bt.borrow_date) <= '$endDate'
             GROUP BY g.genre_id, g.genre_name
             ORDER BY value DESC
             LIMIT 10";
@@ -124,8 +127,9 @@ if ($type === 'genrePopularity') {
 if ($type === 'topBorrowers') {
     $sql = "SELECT m.user_id, COUNT(bt.borrow_id) as borrow_count
             FROM member m
-            LEFT JOIN book_transaction bt ON m.user_id = bt.Member_user_id
-            WHERE bt.borrow_date BETWEEN '$startDate' AND '$endDate' OR bt.borrow_date IS NULL
+            INNER JOIN book_transaction bt ON m.user_id = bt.Member_user_id
+            WHERE DATE(bt.borrow_date) >= '$startDate'
+              AND DATE(bt.borrow_date) <= '$endDate'
             GROUP BY m.user_id
             ORDER BY borrow_count DESC
             LIMIT 5";
@@ -139,7 +143,9 @@ if ($type === 'materialsAdded') {
     $sql = "SELECT g.genre_name as label, COUNT(b.book_id) as value
             FROM genre g
             LEFT JOIN book b ON g.genre_id = b.Genre_genre_id
-            WHERE b.publication_date BETWEEN '$startDate' AND '$endDate' OR b.publication_date IS NULL
+            WHERE b.publication_date IS NOT NULL
+              AND b.publication_date <> ''
+              AND CAST(b.publication_date AS UNSIGNED) BETWEEN $startYear AND $endYear
             GROUP BY g.genre_id, g.genre_name
             ORDER BY value DESC
             LIMIT 10";
