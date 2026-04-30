@@ -37,6 +37,64 @@
             font-weight: 600;
         }
 
+        /* Date input and navigation button styling */
+        #dateInput {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.2s;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        #dateInput:hover, #dateInput:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+            outline: none;
+        }
+
+        .nav-button {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.2s;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-button:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+
+        .overview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .overview-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .title-group h1 {
+                font-size: 24px !important;
+            }
+        }
+
         .book-img-holder {
             width: 45px;
             height: 60px;
@@ -95,7 +153,7 @@
                     <li class="nav-item active"><a href="#"><i class="fi fi-rr-home"></i> Dashboard</a></li>
                     <li class="nav-item"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
                     <li class="nav-item"><a href="admin_users.html"><i class="fi fi-rr-users-alt"></i> Users</a></li>
-                    <li class="nav-item"><a href="admin_waitlist.html"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
+                    <li class="nav-item"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
                     <li class="nav-item"><a href="admin_settings.html"><i class="fi fi-rr-settings"></i> Settings</a></li>
                 </ul>
             </nav>
@@ -108,15 +166,28 @@
         </aside>
 
         <main class="main-content">
-            <header class="overview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <header class="overview-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
                 <div class="title-group">
                     <h1 style="font-size: 28px; margin: 0;">System Overview</h1>
-                    <p style="color: #64748b; margin: 4px 0 0;">Monitor library activity and statistics.</p>
+                    <p style="color: #64748b; margin: 4px 0 0;" id="periodIndicator">Monitor library activity and statistics.</p>
                 </div>
-                <div class="filter-buttons">
-                    <button class="active">Weekly</button>
-                    <button>Monthly</button>
-                    <button>Yearly</button>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <!-- Date Navigation Controls -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="nav-button" onclick="previousPeriod()" title="Previous Period">
+                            <i class="fi fi-rr-angle-left"></i>
+                        </button>
+                        <input type="date" id="dateInput" />
+                        <button class="nav-button" onclick="nextPeriod()" title="Next Period">
+                            <i class="fi fi-rr-angle-right"></i>
+                        </button>
+                    </div>
+                    <!-- Filter Buttons -->
+                    <div class="filter-buttons">
+                        <button class="active" onclick="changePeriod('week')" data-period="week">Weekly</button>
+                        <button onclick="changePeriod('month')" data-period="month">Monthly</button>
+                        <button onclick="changePeriod('year')" data-period="year">Yearly</button>
+                    </div>
                 </div>
             </header>
 
@@ -187,12 +258,14 @@
             <div class="dashboard-row equal">
                 <div class="card">
                     <h3 style="margin-bottom: 20px;">🏆 Top Borrowers</h3>
-                    <div class="borrower-item" style="display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
-                        <div style="display:flex; align-items:center; gap:12px;">
-                            <div class="avatar" style="background:#eff6ff; color:#3b82f6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">J</div>
-                            <div><strong>Jane Doe</strong><br><small style="color:#64748b;">Student</small></div>
+                    <div id="topBorrowersList">
+                        <div class="borrower-item" style="display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div class="avatar" style="background:#eff6ff; color:#3b82f6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">?</div>
+                                <div><strong>Loading...</strong><br><small style="color:#64748b;">Top borrowers</small></div>
+                            </div>
+                            <span style="font-weight:600; color:#3b82f6;">0x</span>
                         </div>
-                        <span style="font-weight:600; color:#3b82f6;">4x</span>
                     </div>
                 </div>
                 <div class="card">
@@ -205,16 +278,9 @@
 
             <div class="dashboard-row single">
                 <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
-                        <div>
-                            <h3 style="margin:0;">Fine Summary</h3>
-                            <small style="color:#64748b;">Collected: ₱440 · Pending: ₱627 · Total: ₱1067</small>
-                        </div>
-                        <div class="filter-buttons">
-                            <button>Weekly</button>
-                            <button class="active">Monthly</button>
-                            <button>Yearly</button>
-                        </div>
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="margin:0;">Fine Summary</h3>
+                        <small style="color:#64748b;">Collected: ₱440 · Pending: ₱627 · Total: ₱1067</small>
                     </div>
                     <div class="chart-wrapper chart-wrapper--small">
                         <canvas id="finesChart"></canvas>
@@ -227,10 +293,130 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="dashboard_charts.js"></script>
     <script>
+        let currentPeriod = 'week';
+        let currentDate = new Date();
+
         function toggleDetails(id, arrowId) {
             document.getElementById(id).classList.toggle('hidden');
             document.getElementById(arrowId).classList.toggle('rotate-arrow');
         }
+
+        function changePeriod(period) {
+            currentPeriod = period;
+            currentDate = new Date();
+            
+            // Update button states
+            document.querySelectorAll('.filter-buttons button[data-period]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`button[data-period="${period}"]`).classList.add('active');
+            
+            updatePeriodIndicator();
+            updateDateInput();
+            updateAllCharts();
+        }
+
+        function previousPeriod() {
+            if (currentPeriod === 'week') {
+                currentDate.setDate(currentDate.getDate() - 7);
+            } else if (currentPeriod === 'month') {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+            } else if (currentPeriod === 'year') {
+                currentDate.setFullYear(currentDate.getFullYear() - 1);
+            }
+            updatePeriodIndicator();
+            updateDateInput();
+            updateAllCharts();
+        }
+
+        function nextPeriod() {
+            if (currentPeriod === 'week') {
+                currentDate.setDate(currentDate.getDate() + 7);
+            } else if (currentPeriod === 'month') {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            } else if (currentPeriod === 'year') {
+                currentDate.setFullYear(currentDate.getFullYear() + 1);
+            }
+            updatePeriodIndicator();
+            updateDateInput();
+            updateAllCharts();
+        }
+
+        function updateDateInput() {
+            const input = document.getElementById('dateInput');
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const day = String(currentDate.getDate()).padStart(2, '0');
+            input.value = `${year}-${month}-${day}`;
+        }
+
+        function updatePeriodIndicator() {
+            const indicator = document.getElementById('periodIndicator');
+            let text = '';
+            
+            if (currentPeriod === 'week') {
+                const weekStart = new Date(currentDate);
+                weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                
+                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                text = `Week of ${weekStart.toLocaleDateString('en-US', options)} - ${weekEnd.toLocaleDateString('en-US', options)}`;
+            } else if (currentPeriod === 'month') {
+                const options = { month: 'long', year: 'numeric' };
+                text = `${currentDate.toLocaleDateString('en-US', options)}`;
+            } else if (currentPeriod === 'year') {
+                text = `Year ${currentDate.getFullYear()}`;
+            }
+            
+            indicator.textContent = text;
+        }
+
+        function getDateRange() {
+            let startDate, endDate;
+            
+            if (currentPeriod === 'week') {
+                startDate = new Date(currentDate);
+                startDate.setDate(currentDate.getDate() - currentDate.getDay());
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+            } else if (currentPeriod === 'month') {
+                startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            } else if (currentPeriod === 'year') {
+                startDate = new Date(currentDate.getFullYear(), 0, 1);
+                endDate = new Date(currentDate.getFullYear(), 11, 31);
+            }
+            
+            return {
+                start: startDate.toISOString().split('T')[0],
+                end: endDate.toISOString().split('T')[0]
+            };
+        }
+
+        function updateAllCharts() {
+            // This will be called by the dashboard_charts.js
+            if (window.refreshCharts) {
+                window.refreshCharts(currentPeriod, getDateRange());
+            }
+        }
+
+        // Handle direct date input change
+        document.getElementById('dateInput').addEventListener('change', function() {
+            const newDate = new Date(this.value);
+            if (!isNaN(newDate.getTime())) {
+                currentDate = newDate;
+                updatePeriodIndicator();
+                updateAllCharts();
+            }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', function() {
+            updatePeriodIndicator();
+            updateDateInput();
+            updateAllCharts();
+        });
     </script>
 </body>
 </html>

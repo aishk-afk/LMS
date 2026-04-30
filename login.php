@@ -28,7 +28,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         echo json_encode([
             "status" => "success",
-            "role" => strtolower($user['user_type'])
+            "role" => strtoLower($user['user_type']),
+            "user_id" => $user['user_id']
         ]);
     } else {
         echo json_encode([
