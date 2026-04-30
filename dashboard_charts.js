@@ -41,6 +41,20 @@ async function updateStatistics(startDate, endDate) {
     }
 }
 
+// Update fine dislay
+
+async function updateFineSummary() {
+    try {
+        const fineSummary = await fetchDashboardData ('fineSummary', '','',);
+        const summaryElement = document.querySelector('.card small');
+        if (summaryElemeent) {
+            summaryElement.textContent = 'Collected: ₱${fineSummary.collected || 0} · Pending: ₱${fineSummary.pending || 0} · Total: ₱${fineSummary.total || 0}';
+        }
+    } catch (error) {
+        console.error('Error updating fine summary:', error);
+    }
+}
+
 // Update active borrow details table
 async function updateActiveBorrowsTable(startDate, endDate) {
     try {

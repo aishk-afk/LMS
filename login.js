@@ -31,12 +31,13 @@ document.getElementById("loginForm").addEventListener("submit", function(event) 
             if (data.role === "admin") {
                 window.location.href = "admin_dashboard.html";
             } else {
-                window.location.href = "member_dashboard.html";
+                const UserId = encodeURIComponent(data.user_id || 'ST001');
+                window.location.href = `member_dashboard.php?user_id=${userId}`;
             }
         } else {
             alert(data.message || "Incorrect email or password");
         }
-    })
+})
     .catch(() => {
         alert("Server error");
     });

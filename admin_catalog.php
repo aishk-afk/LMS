@@ -8,9 +8,9 @@ $genres_result = $conn->query($genre_query);
 
 // 3. Fetch Books with Genre Names and Copy counts
 $query = "SELECT b.*, g.genre_name, 
-          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id) as copies 
+          (SELECT COUNT(*) FROM Book_Copy WHERE book_id = b.book_id) as copies 
           FROM Book b
-          LEFT JOIN Genre g ON b.Genre_genre_id = g.genre_id";
+          LEFT JOIN Genre g ON b.genre_id = g.genre_id";
 $result = $conn->query($query);
 ?>
 
