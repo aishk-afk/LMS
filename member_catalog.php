@@ -156,20 +156,38 @@ $result = $conn->query($query);
         <aside class="sidebar">
             <div class="sidebar-header">
                 <img src="applogo(2).png" alt="Logo" style="width: 30px;">
-                <h2 style="font-size: 1.2rem;">Library Hub</h2>
+                <h2 class="brand-name">Learning Library Management Hub</h2>
             </div>
             <nav class="sidebar-nav">
                 <ul>
                     <li class="nav-item"><a href="member_dashboard.php"><i class="fi fi-rr-home"></i> Dashboard</a></li>
-                    <li class="nav-item active"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a>
+                    <li class="nav-item active"><a href="member_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a>
                     </li>
-                    <li class="nav-item"><a href="member_settings.html"><i class="fi fi-rr-settings"></i> Settings</a>
+                    <li class="nav-item"><a href="member_account.html"><i class="fi fi-rr-settings"></i> Settings</a>
                     </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
-                <div class="admin-profile"><strong>Admin User</strong><br><small>Librarian</small></div>
-                <a href="index.html" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
+                <div class="user-info">
+                    <strong>
+                        <?php
+                        // Use the exact keys from your login.php
+                        $first = $_SESSION['user_name'] ?? 'User';
+                        $last = $_SESSION['last_name'] ?? '';
+                        echo htmlspecialchars($first . ' ' . $last);
+                        ?>
+                    </strong>
+                    <br>
+                    <small>
+                        <?php
+                        // Use 'user_role' to get "student" instead of the default "Member"
+                        echo htmlspecialchars($_SESSION['user_role'] ?? 'Member');
+                        ?>
+                    </small>
+                </div>
+                <a href="login.php?action=logout" class="logout-link">
+                    <i class="fi fi-rr-exit"></i> Logout
+                </a>
             </div>
         </aside>
 

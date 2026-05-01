@@ -17,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = hash('sha256', $_POST['password']);
 
     //user details
-    $stmt = $conn->prepare("SELECT user_id, user_type, first_name FROM `User` WHERE email=? AND password=?");
+    $stmt = $conn->prepare("SELECT user_id, user_type, first_name, last_name FROM `User` WHERE email=? AND password=?");
     $stmt->bind_param("ss", $email, $password);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -28,6 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['user_id'] = $user['user_id'];
         $_SESSION['user_role'] = strtolower($user['user_type']);
         $_SESSION['user_name'] = $user['first_name'];
+        $_SESSION['last_name'] = $user['last_name'];
 
         echo json_encode([
             "status" => "success",
