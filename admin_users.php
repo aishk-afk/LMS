@@ -1,5 +1,12 @@
+<?php
+session_start();
+// If you have database includes, they go here
+include 'db_config.php'; 
+?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,7 +30,7 @@
         }
 
         .member-card:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
         .member-main-info {
@@ -90,8 +97,15 @@
             font-weight: 600;
         }
 
-        .role-student { background: #f5f3ff; color: #7c3aed; }
-        .role-faculty { background: #fff7ed; color: #ea580c; }
+        .role-student {
+            background: #f5f3ff;
+            color: #7c3aed;
+        }
+
+        .role-faculty {
+            background: #fff7ed;
+            color: #ea580c;
+        }
 
         .stat-badge {
             display: flex;
@@ -128,18 +142,37 @@
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item"><a href="admin_dashboard.html"><i class="fi fi-rr-home"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="admin_dashboard.php"><i class="fi fi-rr-home"></i> Dashboard</a></li>
                     <li class="nav-item"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
-                    <li class="nav-item active"><a href="#"><i class="fi fi-rr-users-alt"></i> Users</a></li>
+                    <li class="nav-item active"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a>
+                    </li>
                     <li class="nav-item"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
-                    <li class="nav-item"><a href="admin_settings.html"><i class="fi fi-rr-settings"></i> Settings</a></li>
+                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a>
+                    </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
-                <div class="admin-profile">
-                    <strong>Admin User</strong><br><small>Admin</small>
+                <div class="user-info">
+                    <strong>
+                        <?php
+                        // Pulls admin's first and last name
+                        $first = $_SESSION['user_name'] ?? 'Admin';
+                        $last = $_SESSION['last_name'] ?? '';
+                        echo htmlspecialchars($first . ' ' . $last);
+                        ?>
+                    </strong>
+                    <br>
+                    <small>
+                        <?php
+                        // Capitalizes 'admin' to 'Admin'
+                        $role = $_SESSION['user_role'] ?? 'Admin';
+                        echo htmlspecialchars(ucfirst($role));
+                        ?>
+                    </small>
                 </div>
-                <a href="index.html" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
+                <a href="index.html" class="logout-link">
+                    <i class="fi fi-rr-exit"></i> Logout
+                </a>
             </div>
         </aside>
 
@@ -150,7 +183,7 @@
             </header>
 
             <section class="members-list">
-                
+
                 <div class="member-card">
                     <div class="member-main-info">
                         <div class="member-avatar">J</div>
@@ -233,4 +266,5 @@
         </main>
     </div>
 </body>
+
 </html>

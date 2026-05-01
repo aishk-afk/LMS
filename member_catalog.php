@@ -163,7 +163,7 @@ $result = $conn->query($query);
                     <li class="nav-item"><a href="member_dashboard.php"><i class="fi fi-rr-home"></i> Dashboard</a></li>
                     <li class="nav-item active"><a href="member_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a>
                     </li>
-                    <li class="nav-item"><a href="member_account.html"><i class="fi fi-rr-settings"></i> Settings</a>
+                    <li class="nav-item"><a href="member_account.php"><i class="fi fi-rr-settings"></i> Settings</a>
                     </li>
                 </ul>
             </nav>
@@ -171,7 +171,7 @@ $result = $conn->query($query);
                 <div class="user-info">
                     <strong>
                         <?php
-                        // Use the exact keys from your login.php
+                        // We use 'user_name' and 'last_name' from your login.php
                         $first = $_SESSION['user_name'] ?? 'User';
                         $last = $_SESSION['last_name'] ?? '';
                         echo htmlspecialchars($first . ' ' . $last);
@@ -180,12 +180,13 @@ $result = $conn->query($query);
                     <br>
                     <small>
                         <?php
-                        // Use 'user_role' to get "student" instead of the default "Member"
-                        echo htmlspecialchars($_SESSION['user_role'] ?? 'Member');
+                        // ucfirst() turns "student" into "Student" or "member" into "Member"
+                        $role = $_SESSION['user_role'] ?? 'Member';
+                        echo htmlspecialchars(ucfirst($role));
                         ?>
                     </small>
                 </div>
-                <a href="login.php?action=logout" class="logout-link">
+                <a href="index.html" class="logout-link">
                     <i class="fi fi-rr-exit"></i> Logout
                 </a>
             </div>

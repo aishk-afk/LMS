@@ -1,5 +1,12 @@
+<?php
+session_start();
+// If you have database includes, they go here
+include 'db_config.php'; 
+?>
+
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +16,7 @@
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
 </head>
+
 <body>
     <div class="app-container">
         <aside class="sidebar">
@@ -20,14 +28,32 @@
                 <ul>
                     <li class="nav-item"><a href="member_dashboard.php"><i class="fi fi-rr-home"></i> Dashboard</a></li>
                     <li class="nav-item"><a href="member_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
-                    <li class="nav-item active"><a href="member_account.html"><i class="fi fi-rr-user"></i> Account</a></li>
+                    <li class="nav-item active"><a href="member_account.html"><i class="fi fi-rr-user"></i> Account</a>
+                    </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
                 <div class="user-info">
-                    <strong>Jane Doe</strong><br><small>Student</small>
+                    <strong>
+                        <?php
+                        // We use 'user_name' and 'last_name' from your login.php
+                        $first = $_SESSION['user_name'] ?? 'User';
+                        $last = $_SESSION['last_name'] ?? '';
+                        echo htmlspecialchars($first . ' ' . $last);
+                        ?>
+                    </strong>
+                    <br>
+                    <small>
+                        <?php
+                        // ucfirst() turns "student" into "Student" or "member" into "Member"
+                        $role = $_SESSION['user_role'] ?? 'Member';
+                        echo htmlspecialchars(ucfirst($role));
+                        ?>
+                    </small>
                 </div>
-                <a href="index.html" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
+                <a href="index.html" class="logout-link">
+                    <i class="fi fi-rr-exit"></i> Logout
+                </a>
             </div>
         </aside>
 
@@ -58,4 +84,5 @@
         </main>
     </div>
 </body>
+
 </html>

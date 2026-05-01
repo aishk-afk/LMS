@@ -139,26 +139,35 @@ if (!$result) {
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item"><a href="admin_dashboard.html"><i class="fi fi-rr-home"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="admin_dashboard.php"><i class="fi fi-rr-home"></i> Dashboard</a></li>
                     <li class="nav-item active"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a>
                     </li>
-                    <li class="nav-item"><a href="admin_users.html"><i class="fi fi-rr-users-alt"></i> Users</a></li>
+                    <li class="nav-item"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a></li>
                     <li class="nav-item"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
-                    <li class="nav-item"><a href="admin_settings.html"><i class="fi fi-rr-settings"></i> Settings</a>
+                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a>
                     </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
-                <div class="user-profile">
-                    <strong style="display: block; color: #1e293b;">
-                        <?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?>
+                <div class="user-info">
+                    <strong>
+                        <?php
+                        // Pulls admin's first and last name
+                        $first = $_SESSION['user_name'] ?? 'Admin';
+                        $last = $_SESSION['last_name'] ?? '';
+                        echo htmlspecialchars($first . ' ' . $last);
+                        ?>
                     </strong>
-                    <small style="color: #64748b; text-transform: capitalize;">
-                        <?php echo htmlspecialchars($_SESSION['role'] ?? 'Guest'); ?>
+                    <br>
+                    <small>
+                        <?php
+                        // Capitalizes 'admin' to 'Admin'
+                        $role = $_SESSION['user_role'] ?? 'Admin';
+                        echo htmlspecialchars(ucfirst($role));
+                        ?>
                     </small>
                 </div>
-                <a href="login.php?action=logout" class="logout-link"
-                    style="margin-top: 10px; display: flex; align-items: center; gap: 8px; color: #ef4444; text-decoration: none; font-size: 0.9rem;">
+                <a href="index.html" class="logout-link">
                     <i class="fi fi-rr-exit"></i> Logout
                 </a>
             </div>
@@ -194,7 +203,8 @@ if (!$result) {
                         $genres_result->data_seek(0);
                         while ($g = $genres_result->fetch_assoc()): ?>
                             <option value="<?php echo htmlspecialchars($g['genre_name']); ?>">
-                                <?php echo htmlspecialchars($g['genre_name']); ?></option>
+                                <?php echo htmlspecialchars($g['genre_name']); ?>
+                            </option>
                         <?php endwhile; ?>
                     </select>
                 </div>
@@ -226,7 +236,8 @@ if (!$result) {
                                 <span
                                     class="genre-badge"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
                                 <h3 style="font-size: 1rem; margin: 5px 0; color: #1e293b;">
-                                    <?php echo htmlspecialchars($row['title']); ?></h3>
+                                    <?php echo htmlspecialchars($row['title']); ?>
+                                </h3>
                             </div>
                         </div>
                     <?php endwhile; ?>

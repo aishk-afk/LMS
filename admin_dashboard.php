@@ -1,31 +1,7 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-include 'db_config.php';
-
-// 1. Role Authorization Check
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['role']) || strtolower($_SESSION['role']) !== 'admin') {
-    header("Location: login.php");
-    exit;
-}
-
-// 2. Identify User and Role
-$userId = $_SESSION['user_id'];
-$role = strtolower($_SESSION['role']);
-
-// 2. Fetch Admin Profile Info
-$userQuery = "SELECT u.first_name, u.last_name, u.user_type 
-              FROM user u 
-              WHERE u.user_id = '$userId' LIMIT 1";
-$userResult = $conn->query($userQuery);
-$user = $userResult->fetch_assoc();
-$fullName = $user ? $user['first_name'] . ' ' . $user['last_name'] : 'Admin User';
-
-// 3. Fetch Library Statistics (Dynamic Data)
-$totalBooks = $conn->query("SELECT COUNT(*) as count FROM Book")->fetch_assoc()['count'];
-$onLoan = $conn->query("SELECT COUNT(*) as count FROM Book_Copy WHERE status = 'Borrowed'")->fetch_assoc()['count'];
-$available = $conn->query("SELECT COUNT(*) as count FROM Book_Copy WHERE status = 'Available'")->fetch_assoc()['count'];
+session_start();
+// If you have database includes, they go here
+include 'db_config.php'; 
 ?>
 
 <!DOCTYPE html>
@@ -34,94 +10,496 @@ $available = $conn->query("SELECT COUNT(*) as count FROM Book_Copy WHERE status 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Library Hub</title>
+    <title>Library Management System - Dashboard</title>
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/member.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
+    <style>
+        .filter-buttons {
+            display: flex;
+            background: #f1f5f9;
+            padding: 4px;
+            border-radius: 10px;
+            gap: 4px;
+        }
+
+        .filter-buttons button {
+            border: none;
+            background: transparent;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-buttons button.active {
+            background: white;
+            color: #1e293b;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+
+        /* Date input and navigation button styling */
+        #dateInput {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.2s;
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        #dateInput:hover,
+        #dateInput:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+            outline: none;
+        }
+
+        .nav-button {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.2s;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-button:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+
+        .overview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .overview-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .title-group h1 {
+                font-size: 24px !important;
+            }
+        }
+
+        .book-img-holder {
+            width: 45px;
+            height: 60px;
+            border-radius: 4px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .book-img-holder img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .details-section {
+            background: white;
+            margin: 20px 0;
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .rotate-arrow {
+            transform: rotate(180deg);
+            transition: 0.3s;
+        }
+
+        .text-red {
+            color: #ef4444 !important;
+        }
+
+        /* Row Layouts */
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .dashboard-row.equal {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .dashboard-row.single {
+            grid-template-columns: 1fr;
+        }
+
+        .card {
+            background: white;
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid #f1f5f9;
+        }
+    </style>
 </head>
 
 <body>
     <div class="admin-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <img src="applogo(2).png" alt="Logo" style="width: 30px;">
-                <h2>Library Learning Management Hub</h2>
+                <img src="applogo(2).png" alt="Logo" class="logo-icon">
+                <h2 class="brand-name">Library Learning Management Hub</h2>
             </div>
             <nav class="sidebar-nav">
                 <ul>
                     <li class="nav-item active"><a href="admin_dashboard.php"><i class="fi fi-rr-home"></i>
                             Dashboard</a></li>
                     <li class="nav-item"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
-                    <li class="nav-item"><a href="admin_users.php"><i class="fi fi-rr-users"></i> Users</a></li>
+                    <li class="nav-item"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a></li>
                     <li class="nav-item"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
-                    <li class="nav-item"><a href="admin_settings.html"><i class="fi fi-rr-settings"></i> Settings</a></li>
+                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a>
+                    </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
-                <div class="admin-profile">
-                    <strong><?php echo htmlspecialchars($fullName); ?></strong><br>
-                    <small><?php echo ucfirst($role); ?></small>
+                <div class="user-info">
+                    <strong>
+                        <?php
+                        // Pulls admin's first and last name
+                        $first = $_SESSION['user_name'] ?? 'Admin';
+                        $last = $_SESSION['last_name'] ?? '';
+                        echo htmlspecialchars($first . ' ' . $last);
+                        ?>
+                    </strong>
+                    <br>
+                    <small>
+                        <?php
+                        // Capitalizes 'admin' to 'Admin'
+                        $role = $_SESSION['user_role'] ?? 'Admin';
+                        echo htmlspecialchars(ucfirst($role));
+                        ?>
+                    </small>
                 </div>
-                <a href="login.php?action=logout" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
+                <a href="index.html" class="logout-link">
+                    <i class="fi fi-rr-exit"></i> Logout
+                </a>
             </div>
         </aside>
 
         <main class="main-content">
-            <header class="header-section">
-                <div>
-                    <h1>Welcome back, <?php echo htmlspecialchars($user['first_name'] ?? 'Admin'); ?>!</h1>
-                    <p>Here is what's happening with the library today.</p>
+            <header class="overview-header"
+                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
+                <div class="title-group">
+                    <h1 style="font-size: 28px; margin: 0;">System Overview</h1>
+                    <p style="color: #64748b; margin: 4px 0 0;" id="periodIndicator">Monitor library activity and
+                        statistics.</p>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <!-- Date Navigation Controls -->
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="nav-button" onclick="previousPeriod()" title="Previous Period">
+                            <i class="fi fi-rr-angle-left"></i>
+                        </button>
+                        <input type="date" id="dateInput" />
+                        <button class="nav-button" onclick="nextPeriod()" title="Next Period">
+                            <i class="fi fi-rr-angle-right"></i>
+                        </button>
+                    </div>
+                    <!-- Filter Buttons -->
+                    <div class="filter-buttons">
+                        <button class="active" onclick="changePeriod('week')" data-period="week">Weekly</button>
+                        <button onclick="changePeriod('month')" data-period="month">Monthly</button>
+                        <button onclick="changePeriod('year')" data-period="year">Yearly</button>
+                    </div>
                 </div>
             </header>
 
-            <div class="stats-grid"
-                style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px;">
-                <div class="stat-card"
-                    style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <label style="color: #64748b; font-size: 0.8rem; font-weight: 600;">TOTAL BOOKS</label>
-                    <h2 style="font-size: 2rem; margin: 10px 0;"><?php echo $totalBooks; ?></h2>
+            <div class="stats-grid">
+                <div class="stat-card" onclick="toggleDetails('activeSection', 'arrow1')" style="cursor: pointer;">
+                    <div class="stat-icon icon-blue"><i class="fi fi-rr-book-alt"></i></div>
+                    <div class="stat-info"><span>Active Borrows</span>
+                        <h3>2</h3>
+                    </div>
+                    <i class="fi fi-rr-angle-small-down dropdown-arrow" id="arrow1"></i>
                 </div>
-                <div class="stat-card"
-                    style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <label style="color: #64748b; font-size: 0.8rem; font-weight: 600;">ON LOAN</label>
-                    <h2 style="font-size: 2rem; margin: 10px 0; color: #f97316;"><?php echo $onLoan; ?></h2>
+                <div class="stat-card" onclick="toggleDetails('overdueSection', 'arrow2')" style="cursor: pointer;">
+                    <div class="stat-icon icon-red"><i class="fi fi-rr-exclamation"></i></div>
+                    <div class="stat-info"><span>Overdue Items</span>
+                        <h3 class="text-red">2</h3>
+                    </div>
+                    <i class="fi fi-rr-angle-small-down dropdown-arrow" id="arrow2"></i>
                 </div>
-                <div class="stat-card"
-                    style="background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                    <label style="color: #64748b; font-size: 0.8rem; font-weight: 600;">AVAILABLE</label>
-                    <h2 style="font-size: 2rem; margin: 10px 0; color: #059669;"><?php echo $available; ?></h2>
+                <div class="stat-card">
+                    <div class="stat-icon icon-green"><i class="fi fi-rr-book"></i></div>
+                    <div class="stat-info"><span>Total Books</span>
+                        <h3>14</h3>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon icon-purple"><i class="fi fi-rr-credit-card"></i></div>
+                    <div class="stat-info"><span>Fines Collected</span>
+                        <h3>₱1044</h3>
+                    </div>
                 </div>
             </div>
 
-            <div class="dashboard-section" style="margin-top: 40px;">
-                <div class="card-header">
-                    <h3><i class="fi fi-rr-time-past"></i> Recent Transactions</h3>
+            <div id="activeSection" class="details-section hidden">
+                <h3 style="margin-bottom: 20px;"><i class="fi fi-rr-book-alt" style="color:#3b82f6"></i> Active Borrows
+                </h3>
+                <table class="borrow-table">
+                    <thead>
+                        <tr>
+                            <th>BOOK</th>
+                            <th>BORROWER</th>
+                            <th>DUE DATE</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <div class="book-img-holder"><img src="book1.jpg"></div>Pride and Prejudice
+                                </div>
+                            </td>
+                            <td>Jane Doe</td>
+                            <td>Mar 15, 2026</td>
+                            <td><button class="btn-return">Return</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="overdueSection" class="details-section hidden">
+                <h3 style="margin-bottom: 20px;"><i class="fi fi-rr-exclamation" style="color:#ef4444"></i> Overdue
+                    Items</h3>
+                <table class="borrow-table">
+                    <thead>
+                        <tr>
+                            <th>BOOK</th>
+                            <th>BORROWER</th>
+                            <th>DAYS OVERDUE</th>
+                            <th>FINE</th>
+                            <th>ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <div class="book-img-holder"><img src="book1.jpg"></div>Pride and Prejudice
+                                </div>
+                            </td>
+                            <td>Jane Doe</td>
+                            <td class="text-red">29 days</td>
+                            <td>₱87</td>
+                            <td><button class="btn-return" style="background:#ef4444">Return</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="dashboard-row">
+                <div class="card">
+                    <h3>Borrowing Trends</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="borrowingChart"></canvas>
+                    </div>
                 </div>
-                <div class="table-container"
-                    style="background: white; border-radius: 15px; padding: 20px; margin-top: 15px;">
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="text-align: left; border-bottom: 1px solid #e2e8f0; color: #64748b;">
-                                <th style="padding: 10px;">Book</th>
-                                <th>Member</th>
-                                <th>Status</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="padding: 15px 10px;">The Maze Runner</td>
-                                <td>John Doe</td>
-                                <td><span class="badge-green">Returned</span></td>
-                                <td>Oct 24, 2023</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div class="card">
+                    <h3>Genre Popularity</h3>
+                    <div class="chart-wrapper chart-wrapper--small">
+                        <canvas id="genreChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-row equal">
+                <div class="card">
+                    <h3 style="margin-bottom: 20px;">🏆 Top Borrowers</h3>
+                    <div id="topBorrowersList">
+                        <div class="borrower-item"
+                            style="display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div class="avatar"
+                                    style="background:#eff6ff; color:#3b82f6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">
+                                    ?</div>
+                                <div><strong>Loading...</strong><br><small style="color:#64748b;">Top borrowers</small>
+                                </div>
+                            </div>
+                            <span style="font-weight:600; color:#3b82f6;">0x</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>Materials Added by Genre</h3>
+                    <div class="chart-wrapper chart-wrapper--small">
+                        <canvas id="materialsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-row single">
+                <div class="card">
+                    <div style="margin-bottom: 20px;">
+                        <h3 style="margin:0;">Fine Summary</h3>
+                        <small style="color:#64748b;">Collected: ₱440 · Pending: ₱627 · Total: ₱1067</small>
+                    </div>
+                    <div class="chart-wrapper chart-wrapper--small">
+                        <canvas id="finesChart"></canvas>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="dashboard_charts.js"></script>
+    <script>
+        let currentPeriod = 'week';
+        let currentDate = new Date();
+
+        function toggleDetails(id, arrowId) {
+            document.getElementById(id).classList.toggle('hidden');
+            document.getElementById(arrowId).classList.toggle('rotate-arrow');
+        }
+
+        function changePeriod(period) {
+            currentPeriod = period;
+            currentDate = new Date();
+
+            // Update button states
+            document.querySelectorAll('.filter-buttons button[data-period]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`button[data-period="${period}"]`).classList.add('active');
+
+            updatePeriodIndicator();
+            updateDateInput();
+            updateAllCharts();
+        }
+
+        function previousPeriod() {
+            if (currentPeriod === 'week') {
+                currentDate.setDate(currentDate.getDate() - 7);
+            } else if (currentPeriod === 'month') {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+            } else if (currentPeriod === 'year') {
+                currentDate.setFullYear(currentDate.getFullYear() - 1);
+            }
+            updatePeriodIndicator();
+            updateDateInput();
+            updateAllCharts();
+        }
+
+        function nextPeriod() {
+            if (currentPeriod === 'week') {
+                currentDate.setDate(currentDate.getDate() + 7);
+            } else if (currentPeriod === 'month') {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+            } else if (currentPeriod === 'year') {
+                currentDate.setFullYear(currentDate.getFullYear() + 1);
+            }
+            updatePeriodIndicator();
+            updateDateInput();
+            updateAllCharts();
+        }
+
+        function updateDateInput() {
+            const input = document.getElementById('dateInput');
+            const year = currentDate.getFullYear();
+            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const day = String(currentDate.getDate()).padStart(2, '0');
+            input.value = `${year}-${month}-${day}`;
+        }
+
+        function updatePeriodIndicator() {
+            const indicator = document.getElementById('periodIndicator');
+            let text = '';
+
+            if (currentPeriod === 'week') {
+                const weekStart = new Date(currentDate);
+                weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+
+                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                text = `Week of ${weekStart.toLocaleDateString('en-US', options)} - ${weekEnd.toLocaleDateString('en-US', options)}`;
+            } else if (currentPeriod === 'month') {
+                const options = { month: 'long', year: 'numeric' };
+                text = `${currentDate.toLocaleDateString('en-US', options)}`;
+            } else if (currentPeriod === 'year') {
+                text = `Year ${currentDate.getFullYear()}`;
+            }
+
+            indicator.textContent = text;
+        }
+
+        function getDateRange() {
+            let startDate, endDate;
+
+            if (currentPeriod === 'week') {
+                startDate = new Date(currentDate);
+                startDate.setDate(currentDate.getDate() - currentDate.getDay());
+                endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + 6);
+            } else if (currentPeriod === 'month') {
+                startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            } else if (currentPeriod === 'year') {
+                startDate = new Date(currentDate.getFullYear(), 0, 1);
+                endDate = new Date(currentDate.getFullYear(), 11, 31);
+            }
+
+            return {
+                start: startDate.toISOString().split('T')[0],
+                end: endDate.toISOString().split('T')[0]
+            };
+        }
+
+        function updateAllCharts() {
+            // This will be called by the dashboard_charts.js
+            if (window.refreshCharts) {
+                window.refreshCharts(currentPeriod, getDateRange());
+            }
+        }
+
+        // Handle direct date input change
+        document.getElementById('dateInput').addEventListener('change', function () {
+            const newDate = new Date(this.value);
+            if (!isNaN(newDate.getTime())) {
+                currentDate = newDate;
+                updatePeriodIndicator();
+                updateAllCharts();
+            }
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', function () {
+            updatePeriodIndicator();
+            updateDateInput();
+            updateAllCharts();
+        });
+    </script>
 </body>
 
 </html>

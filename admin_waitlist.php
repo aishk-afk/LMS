@@ -1,4 +1,5 @@
 <?php
+session_start();
 include 'db_config.php';
 
 $sql = "SELECT b.book_id, b.title, b.image_url, b.edition, 
@@ -117,19 +118,37 @@ $waitlist_result = $conn->query($sql);
             </div>
             <nav class="sidebar-nav">
                 <ul>
-                    <li class="nav-item"><a href="admin_dashboard.html"><i class="fi fi-rr-home"></i> Dashboard</a></li>
+                    <li class="nav-item"><a href="admin_dashboard.php"><i class="fi fi-rr-home"></i> Dashboard</a></li>
                     <li class="nav-item"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
-                    <li class="nav-item"><a href="admin_users.html"><i class="fi fi-rr-users-alt"></i> Users</a></li>
-                    <li class="nav-item active"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
-                    <li class="nav-item"><a href="admin_settings.html"><i class="fi fi-rr-settings"></i> Settings</a>
+                    <li class="nav-item"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a></li>
+                    <li class="nav-item active"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a>
+                    </li>
+                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a>
                     </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
-                <div class="admin-profile">
-                    <strong>Admin User</strong><br><small>Admin</small>
+                <div class="user-info">
+                    <strong>
+                        <?php
+                        // Pulls admin's first and last name
+                        $first = $_SESSION['user_name'] ?? 'Admin';
+                        $last = $_SESSION['last_name'] ?? '';
+                        echo htmlspecialchars($first . ' ' . $last);
+                        ?>
+                    </strong>
+                    <br>
+                    <small>
+                        <?php
+                        // Capitalizes 'admin' to 'Admin'
+                        $role = $_SESSION['user_role'] ?? 'Admin';
+                        echo htmlspecialchars(ucfirst($role));
+                        ?>
+                    </small>
                 </div>
-                <a href="index.html" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
+                <a href="index.html" class="logout-link">
+                    <i class="fi fi-rr-exit"></i> Logout
+                </a>
             </div>
         </aside>
 
