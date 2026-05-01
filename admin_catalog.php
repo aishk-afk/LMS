@@ -4,15 +4,18 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 include 'db_config.php';
 
-// Get user info from session so the page knows who is browsing
+// 1. FIXED: Use 'user_role' instead of 'role' to match your login.php
 $userId = $_SESSION['user_id'] ?? null;
-$role = $_SESSION['role'] ?? '';
+$role = $_SESSION['user_role'] ?? 'member'; // Default to member if not set
 
-// 2. Fetch Genres for the dropdown
+// 2. Dual UI Logic: Check if the user is actually an admin
+$is_admin = ($role === 'admin');
+
+// 3. Fetch Genres for the dropdown
 $genre_query = "SELECT * FROM genre";
 $genres_result = $conn->query($genre_query);
 
-// 3. Fetch Books with Genre Names and Copy counts
+// 4. Fetch Books with Genre Names and Copy counts
 $query = "SELECT b.*, g.genre_name, 
           (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id) as copies 
           FROM Book b
@@ -20,7 +23,7 @@ $query = "SELECT b.*, g.genre_name,
 $result = $conn->query($query);
 
 if (!$result) {
-    die("Query Failed: " . $conn->error); // This will tell you exactly what is wrong
+    die("Query Failed: " . $conn->error);
 }
 ?>
 
@@ -67,6 +70,21 @@ if (!$result) {
             cursor: pointer;
             transition: transform 0.2s ease;
             padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .btn-borrow:hover {
+            background: #059669;
+        }
+
+        .btn-waitlist:hover {
+            background: #d97706;
         }
 
         .genre-badge {
@@ -127,6 +145,52 @@ if (!$result) {
             border-radius: 12px;
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
+
+        /* Admin Buttons */
+        .btn-edit {
+            background-color: #3b82f6;
+            /* Blue */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .btn-delete {
+            background-color: #ef4444;
+            /* Red */
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Member Buttons */
+        .btn-borrow {
+            background-color: #10b981;
+            /* Green */
+            color: white;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .btn-waitlist {
+            background-color: #f59e0b;
+            /* Orange - as requested */
+            color: white;
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        .btn-waitlist:hover {
+            background-color: #d97706;
+        }
     </style>
 </head>
 
@@ -179,10 +243,12 @@ if (!$result) {
                     <h1 style="font-size: 1.8rem; color: #1e3a8a; margin: 0;">Library Catalog</h1>
                     <p style="color: #64748b; margin: 5px 0 0 0;">Manage and monitor your library collection.</p>
                 </div>
-                <button onclick="openModal()"
-                    style="background: #1e3a8a; color: white; padding: 12px 24px; border: none; border-radius: 50px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                    <i class="fi fi-rr-plus"></i> Add New Material
-                </button>
+                <?php if ($is_admin): ?>
+                    <button onclick="openModal()"
+                        style="background: #1e3a8a; color: white; padding: 12px 24px; border: none; border-radius: 50px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <i class="fi fi-rr-plus"></i> Add New Material
+                    </button>
+                <?php endif; ?>
             </div>
 
             <div class="filter-bar"
@@ -221,10 +287,11 @@ if (!$result) {
                 <?php if ($result && $result->num_rows > 0): ?>
                     <?php while ($row = $result->fetch_assoc()):
                         $isAvailable = ($row['copies'] > 0); ?>
-                        <div class="book-card" data-genre="<?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?>"
-                            onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'">
+
+                        <div class="book-card" data-genre="<?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?>">
                             <div class="book-image"
-                                style="height: 260px; position: relative; border-radius: 14px; overflow: hidden;">
+                                style="height: 260px; position: relative; border-radius: 14px; overflow: hidden; cursor: pointer;"
+                                onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'">
                                 <img src="<?php echo htmlspecialchars($row['image_url']); ?>"
                                     style="width: 100%; height: 100%; object-fit: cover;">
                                 <span class="badge <?php echo $isAvailable ? 'available' : 'unavailable'; ?>">
@@ -232,18 +299,41 @@ if (!$result) {
                                 </span>
                             </div>
 
-                            <div class="book-details" style="padding: 15px;">
-                                <span
-                                    class="genre-badge"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
-                                <h3 style="font-size: 1rem; margin: 5px 0; color: #1e293b;">
+                            <div class="book-details" style="padding: 15px; display: flex; flex-direction: column; gap: 8px;">
+                                <span class="genre-badge">
+                                    <?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?>
+                                </span>
+                                <h3 style="font-size: 1rem; margin: 0; color: #1e293b; cursor: pointer;"
+                                    onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'">
                                     <?php echo htmlspecialchars($row['title']); ?>
                                 </h3>
+
+                                <div class="card-actions" style="margin-top: 10px;">
+                                    <?php if ($is_admin): ?>
+                                        <div style="display: flex; gap: 8px;">
+                                            <button class="btn-edit" onclick="openEditModal(<?php echo $row['book_id']; ?>)"
+                                                style="flex: 1; background: #3b82f6; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer;">Edit</button>
+                                            <button class="btn-delete" onclick="deleteBook(<?php echo $row['book_id']; ?>)"
+                                                style="background: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer;"><i
+                                                    class="fi fi-rr-trash"></i></button>
+                                        </div>
+                                    <?php else: ?>
+                                        <?php if ($isAvailable): ?>
+                                            <button class="btn-borrow" onclick="borrowBook(<?php echo $row['book_id']; ?>)"
+                                                style="width: 100%; background: #10b981; color: white; border: none; padding: 10px; border-radius: 50px; font-weight: 600; cursor: pointer;">
+                                                Borrow Book
+                                            </button>
+                                        <?php else: ?>
+                                            <button class="btn-waitlist" onclick="joinWaitlist(<?php echo $row['book_id']; ?>)"
+                                                style="width: 100%; background: #f59e0b; color: white; border: none; padding: 10px; border-radius: 50px; font-weight: 600; cursor: pointer;">
+                                                Join Waitlist
+                                            </button>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     <?php endwhile; ?>
-                <?php else: ?>
-                    <p style="text-align: center; color: #94a3b8; padding: 40px; width: 100%;">No books found in the
-                        catalog.</p>
                 <?php endif; ?>
             </div>
         </main>
@@ -282,7 +372,7 @@ if (!$result) {
                         <div style="margin-bottom: 15px;">
                             <label style="font-weight:600; display:block;">Title Search</label>
                             <div style="display: flex; gap: 10px;">
-                                <input type="text" id="apiSearchInput" placeholder="Enter book title..."
+                                <input type="text" id="apiSearchInput" name="title" placeholder="Enter book title..."
                                     style="flex:1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;">
                                 <button type="button" onclick="searchAPI()"
                                     style="background:#3b82f6; color:white; border:none; padding: 0 15px; border-radius: 6px; cursor:pointer;"><i
@@ -294,17 +384,17 @@ if (!$result) {
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                            <input type="text" id="modalAuthor" placeholder="Author"
+                            <input type="text" id="modalAuthor" name="author" placeholder="Author"
                                 style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
-                            <input type="text" id="modalEdition" placeholder="Edition"
+                            <input type="text" id="modalEdition" name="edition" placeholder="Edition"
                                 style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
-                            <input type="text" id="modalISBN" placeholder="ISBN"
+                            <input type="text" id="modalISBN" name="isbn" placeholder="ISBN"
                                 style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
-                            <input type="text" id="modalPublisher" placeholder="Publisher"
+                            <input type="text" id="modalPublisher" name="publisher" placeholder="Publisher"
                                 style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
-                            <input type="text" id="modalYear" placeholder="Year (YYYY)"
+                            <input type="text" id="modalYear" name="year" placeholder="Year (YYYY)"
                                 style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
-                            <input type="number" id="modalCopies" placeholder="Copies" value="1"
+                            <input type="number" id="modalCopies" name="copies" placeholder="Copies" value="1"
                                 style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
                         </div>
 
@@ -343,8 +433,6 @@ if (!$result) {
     </div>
 
     <script>
-        function openModal() { document.getElementById('addBookModal').classList.add('active'); }
-        function closeModal() { document.getElementById('addBookModal').classList.remove('active'); }
 
         async function searchAPI() {
             const query = document.getElementById('apiSearchInput').value;
@@ -381,22 +469,31 @@ if (!$result) {
         document.getElementById('bookForm').onsubmit = async function (e) {
             e.preventDefault();
             const formData = new FormData();
+            
+            // Check if we're editing or adding
+            const editBookId = document.getElementById('edit_book_id');
+            if (editBookId && editBookId.value) {
+                formData.append('book_id', editBookId.value);
+            }
+            
             formData.append('title', document.getElementById('apiSearchInput').value);
             formData.append('isbn', document.getElementById('modalISBN').value);
             formData.append('image_url', document.getElementById('modalCover').value);
-            formData.append('copies', document.getElementById('modalCopies').value);
+            formData.append('copies', document.getElementById('modalCopies').value || '1');
             formData.append('price', '0');
             formData.append('edition', document.getElementById('modalEdition').value);
             formData.append('pub_date', document.getElementById('modalYear').value);
             formData.append('description', document.getElementById('bookDescription').value);
             formData.append('genre_id', document.getElementById('bookGenre').value);
+            formData.append('publisher_name', document.getElementById('modalPublisher').value);
 
             try {
                 const response = await fetch('save_book.php', { method: 'POST', body: formData });
                 const text = await response.text();
                 const result = JSON.parse(text);
                 if (result.status === 'success') {
-                    alert("Book Added!");
+                    const isEditing = editBookId && editBookId.value;
+                    alert(isEditing ? "Book Updated!" : "Book Added!");
                     location.reload();
                 } else {
                     alert("Error: " + result.message);
@@ -439,6 +536,125 @@ if (!$result) {
             genreFilter.addEventListener('change', filterBooks);
             statusFilter.addEventListener('change', filterBooks);
         });
+
+        // Function to handle deletion with a confirmation alert
+        function confirmDelete(bookId) {
+            if (confirm("Are you sure you want to remove this book from the catalog?")) {
+                fetch(`delete_book.php?id=${bookId}`, { method: 'GET' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            alert("Error: " + data.message);
+                        }
+                    });
+            }
+        }
+        function openModal() {
+            // Reset form for adding new book if no edit_book_id exists
+            const editBookId = document.getElementById('edit_book_id');
+            if (!editBookId || !editBookId.value) {
+                // Reset for new book
+                document.getElementById('bookForm').reset();
+                document.querySelector('.form-header h2').innerText = "Catalog New Material";
+                document.querySelector('.form-header p').innerText = "Fill in metadata to update your collection.";
+                document.querySelector('#bookForm button[type="submit"]').innerText = "Publish to Catalog";
+                
+                // Clear image preview
+                document.getElementById('modalPreviewImg').style.display = 'none';
+                document.getElementById('placeholderText').style.display = 'block';
+                document.getElementById('modalCover').value = '';
+            }
+            
+            document.getElementById('addBookModal').classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('addBookModal').classList.remove('active');
+            // Clear edit_book_id when closing modal so next add is fresh
+            const editBookId = document.getElementById('edit_book_id');
+            if (editBookId) {
+                editBookId.value = '';
+            }
+        }
+        // Function to open the edit modal (you'll need to fetch book data to fill the form)
+        function openEditModal(bookId) {
+            // 1. Fetch the data from the server
+            fetch(`get_book_details.php?id=${bookId}`)
+                .then(response => response.json())
+                .then(book => {
+                    if (book.error) {
+                        alert(book.error);
+                        return;
+                    }
+
+                    // 2. Fill the form fields with correct IDs
+                    document.getElementById('apiSearchInput').value = book.title || '';
+                    document.getElementById('modalAuthor').value = book.author || '';
+                    document.getElementById('modalISBN').value = book.ISBN || '';
+                    document.getElementById('bookDescription').value = book.description || '';
+                    document.getElementById('modalPublisher').value = book.publisher || '';
+                    document.getElementById('modalYear').value = book.publication_date ? book.publication_date.split('-')[0] : '';
+                    document.getElementById('modalEdition').value = book.edition || '';
+                    document.getElementById('bookGenre').value = book.Genre_genre_id || '';
+
+                    // 3. Display the book cover image
+                    if (book.image_url) {
+                        document.getElementById('modalCover').value = book.image_url;
+                        const prevImg = document.getElementById('modalPreviewImg');
+                        prevImg.src = book.image_url;
+                        prevImg.style.display = 'block';
+                        document.getElementById('placeholderText').style.display = 'none';
+                    }
+
+                    // 4. Update Modal UI
+                    document.querySelector('.form-header h2').innerText = "Edit Material";
+                    document.querySelector('.form-header p').innerText = "Update metadata for this material.";
+                    document.querySelector('#bookForm button[type="submit"]').innerText = "Update Book";
+
+                    // 5. Add/Update hidden input to track which book we are editing
+                    let form = document.getElementById('bookForm');
+                    let hiddenInput = document.getElementById('edit_book_id');
+                    if (!hiddenInput) {
+                        hiddenInput = document.createElement('input');
+                        hiddenInput.type = 'hidden';
+                        hiddenInput.id = 'edit_book_id';
+                        hiddenInput.name = 'book_id';
+                        form.appendChild(hiddenInput);
+                    }
+                    hiddenInput.value = bookId;
+
+                    // 6. Open the Modal
+                    openModal();
+                })
+                .catch(err => console.error("Error fetching book details:", err));
+        }
+
+        function deleteBook(bookId) {
+            if (confirm("Are you sure you want to remove this book?")) {
+                fetch(`delete_book.php?id=${bookId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            location.reload();
+                        } else {
+                            alert("Error: " + data.message);
+                        }
+                    })
+                    .catch(err => alert("Delete script (delete_book.php) not found!"));
+            }
+        }
+
+        function borrowBook(bookId) {
+            alert("Borrowing process started for Book ID: " + bookId);
+            // Add your fetch('borrow_process.php') logic here
+        }
+
+        // 6. WAITLIST BUTTON LOGIC (For Members)
+        function joinWaitlist(bookId) {
+            alert("Added to waitlist for Book ID: " + bookId);
+            // Add your fetch('waitlist_process.php') logic here
+        }
     </script>
 </body>
 
