@@ -1,25 +1,12 @@
 <?php
-<<<<<<< HEAD
-=======
+session_start();
+$userId=$_GET['user_id'] ?? $_SESSION['user_id'] ?? '';
 // 1. Database Connection & Logic
->>>>>>> e251dcb09740a4fe6163f9e6274a984565e1ca4f
 include 'db_config.php';
 
 // Get the ID from URL and sanitize it
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-<<<<<<< HEAD
-$sql = "SELECT book.*, 
-               publisher.publisher_name,
-               genre.genre_name
-        FROM book 
-        LEFT JOIN publisher ON book.Publisher_publisher_id = publisher.publisher_id
-        LEFT JOIN genre ON book.Genre_genre_id = genre.genre_id
-        WHERE book.book_id = ?";
-
-$stmt = $conn->prepare($sql);
-$stmt->bind_param("i", $book_id);
-=======
 if ($id <= 0) {
     die("Invalid Book ID.");
 }
@@ -37,14 +24,9 @@ $query = "SELECT b.*,
 
 $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $id);
->>>>>>> e251dcb09740a4fe6163f9e6274a984565e1ca4f
 $stmt->execute();
 $row = $stmt->get_result()->fetch_assoc();
 
-<<<<<<< HEAD
-if (!$book) { die("Book not found."); }
-?>
-=======
 if (!$row) {
     die("Book not found in the library database.");
 }
@@ -187,13 +169,13 @@ if (!$row) {
     <div class="details-container">
         <div class="book-visual">
             <a href="admin_catalog.php" class="back-link">← Back to Catalog</a>
+            <a href="member_catalog.php?user_id=<?php echo $userId; ?>" class="btn-back"></a>
             <img src="<?php echo htmlspecialchars($row['image_url']); ?>" alt="Cover">
         </div>
 
         <div class="book-content">
             <div class="tag-row">
                 <span class="badge badge-genre"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
-                <span class="badge badge-ref">Reference</span>
             </div>
 
             <h1 class="book-title"><?php echo htmlspecialchars($row['title']); ?></h1>
@@ -246,4 +228,3 @@ if (!$row) {
 </body>
 
 </html>
->>>>>>> e251dcb09740a4fe6163f9e6274a984565e1ca4f

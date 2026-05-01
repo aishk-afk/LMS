@@ -3,14 +3,10 @@ const togglePassword = document.querySelector('#togglePassword');
 const passwordField = document.querySelector('#password');
 
 togglePassword.addEventListener('click', function () {
-    // Toggle the type attribute
     const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
     passwordField.setAttribute('type', type);
-    
-    // Toggle the icon
     this.textContent = type === 'password' ? '👁️' : '🙈';
 });
-
 
 document.getElementById("loginForm").addEventListener("submit", function(event) {
     event.preventDefault();
@@ -28,17 +24,20 @@ document.getElementById("loginForm").addEventListener("submit", function(event) 
     .then(res => res.json())
     .then(data => {
         if (data.status === "success") {
+            // Check the role returned from login.php
             if (data.role === "admin") {
                 window.location.href = "admin_dashboard.html";
             } else {
-                const UserId = encodeURIComponent(data.user_id || 'ST001');
+                // FIXED: Variable name must match (changed UserId to userId)
+                const userId = encodeURIComponent(data.user_id); 
                 window.location.href = `member_dashboard.php?user_id=${userId}`;
             }
         } else {
             alert(data.message || "Incorrect email or password");
         }
-})
-    .catch(() => {
+    })
+    .catch((err) => {
+        console.error("Login error:", err);
         alert("Server error");
     });
 });

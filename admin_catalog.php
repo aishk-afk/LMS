@@ -1,6 +1,12 @@
 <?php
-// 1. Database Connection
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 include 'db_config.php';
+
+// Get user info from session so the page knows who is browsing
+$userId = $_SESSION['user_id'] ?? null;
+$role = $_SESSION['role'] ?? '';
 
 // 2. Fetch Genres for the dropdown
 $genre_query = "SELECT * FROM genre";
@@ -8,10 +14,14 @@ $genres_result = $conn->query($genre_query);
 
 // 3. Fetch Books with Genre Names and Copy counts
 $query = "SELECT b.*, g.genre_name, 
-          (SELECT COUNT(*) FROM Book_Copy WHERE book_id = b.book_id) as copies 
+          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id) as copies 
           FROM Book b
-          LEFT JOIN Genre g ON b.genre_id = g.genre_id";
+          LEFT JOIN Genre g ON b.Genre_genre_id = g.genre_id";
 $result = $conn->query($query);
+
+if (!$result) {
+    die("Query Failed: " . $conn->error); // This will tell you exactly what is wrong
+}
 ?>
 
 <!DOCTYPE html>
