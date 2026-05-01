@@ -167,7 +167,7 @@ if (!$result) {
                         ?>
                     </small>
                 </div>
-                <a href="index.html" class="logout-link">
+                <a href="index.php" class="logout-link">
                     <i class="fi fi-rr-exit"></i> Logout
                 </a>
             </div>

@@ -30,13 +30,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['user_name'] = $user['first_name'];
         $_SESSION['last_name'] = $user['last_name'];
 
+        // SEND JSON BACK TO JAVASCRIPT
         echo json_encode([
             "status" => "success",
-            "role" => strtoLower($user['user_type']),
-            "user_id" => $user['user_id']
+            "role" => $_SESSION['user_role']
         ]);
+        exit;
     } else {
         echo json_encode(["status" => "error", "message" => "Invalid email or password"]);
+        exit;
     }
 }
 ?>
