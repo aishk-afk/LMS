@@ -365,6 +365,9 @@ if (!$result) {
                                 <p>Preview</p>
                             </div>
                         </div>
+                        <input type="text" id="manualCoverUrl" placeholder="Or paste image URL here..."
+                            style="margin-top: 10px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px;"
+                            oninput="updatePreviewFromManual(this.value)">
                         <input type="hidden" id="modalCover">
                     </div>
 
@@ -433,7 +436,6 @@ if (!$result) {
     </div>
 
     <script>
-
         async function searchAPI() {
             const query = document.getElementById('apiSearchInput').value;
             const resultsDiv = document.getElementById('apiResults');
@@ -469,13 +471,13 @@ if (!$result) {
         document.getElementById('bookForm').onsubmit = async function (e) {
             e.preventDefault();
             const formData = new FormData();
-            
+
             // Check if we're editing or adding
             const editBookId = document.getElementById('edit_book_id');
             if (editBookId && editBookId.value) {
                 formData.append('book_id', editBookId.value);
             }
-            
+
             formData.append('title', document.getElementById('apiSearchInput').value);
             formData.append('isbn', document.getElementById('modalISBN').value);
             formData.append('image_url', document.getElementById('modalCover').value);
@@ -537,20 +539,6 @@ if (!$result) {
             statusFilter.addEventListener('change', filterBooks);
         });
 
-        // Function to handle deletion with a confirmation alert
-        function confirmDelete(bookId) {
-            if (confirm("Are you sure you want to remove this book from the catalog?")) {
-                fetch(`delete_book.php?id=${bookId}`, { method: 'GET' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            location.reload();
-                        } else {
-                            alert("Error: " + data.message);
-                        }
-                    });
-            }
-        }
         function openModal() {
             // Reset form for adding new book if no edit_book_id exists
             const editBookId = document.getElementById('edit_book_id');
@@ -560,13 +548,13 @@ if (!$result) {
                 document.querySelector('.form-header h2').innerText = "Catalog New Material";
                 document.querySelector('.form-header p').innerText = "Fill in metadata to update your collection.";
                 document.querySelector('#bookForm button[type="submit"]').innerText = "Publish to Catalog";
-                
+
                 // Clear image preview
                 document.getElementById('modalPreviewImg').style.display = 'none';
                 document.getElementById('placeholderText').style.display = 'block';
                 document.getElementById('modalCover').value = '';
             }
-            
+
             document.getElementById('addBookModal').classList.add('active');
         }
         function closeModal() {
@@ -577,85 +565,25 @@ if (!$result) {
                 editBookId.value = '';
             }
         }
-        // Function to open the edit modal (you'll need to fetch book data to fill the form)
-        function openEditModal(bookId) {
-            // 1. Fetch the data from the server
-            fetch(`get_book_details.php?id=${bookId}`)
-                .then(response => response.json())
-                .then(book => {
-                    if (book.error) {
-                        alert(book.error);
-                        return;
-                    }
+        
+        function updatePreviewFromManual(url) {
+            const prevImg = document.getElementById('modalPreviewImg');
+            const placeholder = document.getElementById('placeholderText');
+            const hiddenCover = document.getElementById('modalCover');
 
-                    // 2. Fill the form fields with correct IDs
-                    document.getElementById('apiSearchInput').value = book.title || '';
-                    document.getElementById('modalAuthor').value = book.author || '';
-                    document.getElementById('modalISBN').value = book.ISBN || '';
-                    document.getElementById('bookDescription').value = book.description || '';
-                    document.getElementById('modalPublisher').value = book.publisher || '';
-                    document.getElementById('modalYear').value = book.publication_date ? book.publication_date.split('-')[0] : '';
-                    document.getElementById('modalEdition').value = book.edition || '';
-                    document.getElementById('bookGenre').value = book.Genre_genre_id || '';
-
-                    // 3. Display the book cover image
-                    if (book.image_url) {
-                        document.getElementById('modalCover').value = book.image_url;
-                        const prevImg = document.getElementById('modalPreviewImg');
-                        prevImg.src = book.image_url;
-                        prevImg.style.display = 'block';
-                        document.getElementById('placeholderText').style.display = 'none';
-                    }
-
-                    // 4. Update Modal UI
-                    document.querySelector('.form-header h2').innerText = "Edit Material";
-                    document.querySelector('.form-header p').innerText = "Update metadata for this material.";
-                    document.querySelector('#bookForm button[type="submit"]').innerText = "Update Book";
-
-                    // 5. Add/Update hidden input to track which book we are editing
-                    let form = document.getElementById('bookForm');
-                    let hiddenInput = document.getElementById('edit_book_id');
-                    if (!hiddenInput) {
-                        hiddenInput = document.createElement('input');
-                        hiddenInput.type = 'hidden';
-                        hiddenInput.id = 'edit_book_id';
-                        hiddenInput.name = 'book_id';
-                        form.appendChild(hiddenInput);
-                    }
-                    hiddenInput.value = bookId;
-
-                    // 6. Open the Modal
-                    openModal();
-                })
-                .catch(err => console.error("Error fetching book details:", err));
-        }
-
-        function deleteBook(bookId) {
-            if (confirm("Are you sure you want to remove this book?")) {
-                fetch(`delete_book.php?id=${bookId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            location.reload();
-                        } else {
-                            alert("Error: " + data.message);
-                        }
-                    })
-                    .catch(err => alert("Delete script (delete_book.php) not found!"));
+            if (url) {
+                prevImg.src = url;
+                prevImg.style.display = 'block';
+                placeholder.style.display = 'none';
+                hiddenCover.value = url; // Sets the URL to be saved in DB
+            } else {
+                prevImg.style.display = 'none';
+                placeholder.style.display = 'block';
             }
         }
-
-        function borrowBook(bookId) {
-            alert("Borrowing process started for Book ID: " + bookId);
-            // Add your fetch('borrow_process.php') logic here
-        }
-
-        // 6. WAITLIST BUTTON LOGIC (For Members)
-        function joinWaitlist(bookId) {
-            alert("Added to waitlist for Book ID: " + bookId);
-            // Add your fetch('waitlist_process.php') logic here
-        }
     </script>
+    
+    <script src="catalog_actions.js"></script>
 </body>
 
 </html>

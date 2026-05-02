@@ -1,6 +1,8 @@
 <?php
 session_start();
-$userId=$_GET['user_id'] ?? $_SESSION['user_id'] ?? '';
+$userId = $_GET['user_id'] ?? $_SESSION['user_id'] ?? '';
+$role = $_SESSION['user_role'] ?? 'member';
+$is_admin = (strtolower($role) === 'admin');
 // 1. Database Connection & Logic
 include 'db_config.php';
 
@@ -168,8 +170,11 @@ if (!$row) {
 
     <div class="details-container">
         <div class="book-visual">
-            <a href="admin_catalog.php" class="back-link">← Back to Catalog</a>
-            <a href="member_catalog.php?user_id=<?php echo $userId; ?>" class="btn-back"></a>
+            <?php if ($is_admin): ?>
+                <a href="admin_catalog.php" class="back-link">← Back to Catalog</a>
+            <?php else: ?>
+                <a href="member_catalog.php" class="back-link">← Back to Catalog</a>
+            <?php endif; ?>
             <img src="<?php echo htmlspecialchars($row['image_url']); ?>" alt="Cover">
         </div>
 
@@ -218,7 +223,7 @@ if (!$row) {
                 <div class="stat-item">
                     <label>Status</label>
                     <div class="status-pill">
-                        <?php echo ($row['available_copies'] > 0) ? 'Available' : 'Out of Stock'; ?>
+                        <?php echo ($row['available_copies'] > 0) ? 'Available' : 'Not Available'; ?>
                     </div>
                 </div>
             </div>

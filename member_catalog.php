@@ -6,7 +6,8 @@ include 'db_config.php';
 
 // Get user info from session so the page knows who is browsing
 $userId = $_SESSION['user_id'] ?? null;
-$role = $_SESSION['role'] ?? '';
+$role = $_SESSION['user_role'] ?? 'member';
+$is_admin = (strtolower($role) === 'admin');
 
 // 1. Fetch Genres for the filter dropdown
 $genre_query = "SELECT * FROM genre";
@@ -218,7 +219,7 @@ $result = $conn->query($query);
                 <select class="dropdown-filter" id="filterStatus">
                     <option value="all">All Status</option>
                     <option value="Available">Available</option>
-                    <option value="Out of Stock">Unavailable</option>
+                    <option value="Not Available">Not Available</option>
                 </select>
             </div>
 
@@ -227,28 +228,40 @@ $result = $conn->query($query);
                     <?php while ($row = $result->fetch_assoc()):
                         $isAvailable = ($row['copies'] > 0);
                         ?>
-                        <div class="book-card" data-genre="<?php echo htmlspecialchars($row['genre_name']); ?>"
-                            data-status="<?php echo $isAvailable ? 'Available' : 'Out of Stock'; ?>"
-                            onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'">
+                        <div class="book-card" data-genre="<?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?>"
+                            data-status="<?php echo $isAvailable ? 'Available' : 'Not Available'; ?>">
 
-                            <div style="height: 250px; position: relative;">
+                            <div style="height: 250px; position: relative; border-radius: 14px; overflow: hidden; cursor: pointer;"
+                                onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'">
                                 <img src="<?php echo htmlspecialchars($row['image_url']); ?>"
                                     style="width:100%; height:100%; object-fit:cover;">
                                 <span
                                     class="status-pill <?php echo $isAvailable ? 'status-available' : 'status-unavailable'; ?>">
-                                    <?php echo $isAvailable ? 'Available' : 'Out of Stock'; ?>
+                                    <?php echo $isAvailable ? 'Available' : 'Not Available'; ?>
                                 </span>
                             </div>
 
                             <div style="padding: 20px;">
-                                <span
-                                    class="genre-badge"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
+                                <span class="genre-badge"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
                                 <h3
-                                    style="font-size: 1rem; margin: 0 0 8px 0; color: #1e293b; font-weight: 700; line-height: 1.4;">
+                                    style="font-size: 1rem; margin: 0 0 8px 0; color: #1e293b; font-weight: 700; line-height: 1.4; cursor: pointer;"
+                                    onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'">
                                     <?php echo htmlspecialchars($row['title']); ?>
                                 </h3>
-                                <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Copies: <?php echo $row['copies']; ?>
+                                <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 15px 0;">Copies: <?php echo $row['copies']; ?>
                                 </p>
+
+                                <div style="display: flex; gap: 10px;">
+                                    <?php if ($isAvailable): ?>
+                                        <button class="btn-borrow" onclick="event.stopPropagation(); borrowBook(<?php echo $row['book_id']; ?>)">
+                                            Borrow Book
+                                        </button>
+                                    <?php else: ?>
+                                        <button class="btn-waitlist" onclick="event.stopPropagation(); joinWaitlist(<?php echo $row['book_id']; ?>)">
+                                            Join Waitlist
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         </div>
                     <?php endwhile; ?>
@@ -291,6 +304,18 @@ $result = $conn->query($query);
         searchInput.addEventListener('input', applyFilters);
         genreFilter.addEventListener('change', applyFilters);
         statusFilter.addEventListener('change', applyFilters);
+
+        function borrowBook(bookId) {
+            event.stopPropagation();
+            alert('Borrowing process started for Book ID: ' + bookId);
+            // TODO: Add actual borrow request logic here
+        }
+
+        function joinWaitlist(bookId) {
+            event.stopPropagation();
+            alert('Added to waitlist for Book ID: ' + bookId);
+            // TODO: Add actual waitlist request logic here
+        }
     </script>
 </body>
 
