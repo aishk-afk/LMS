@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json');
-error_reporting(0); 
+error_reporting(0);
 include 'db_config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // 4. Other Foreign Keys
-        $admin_id = 1; 
+        $admin_id = 1;
         $genre_id = (int) ($_POST['genre_id'] ?? 1);
 
         if ($book_id) {
@@ -50,12 +50,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     publication_date = ?, edition = ?, price = ?, 
                     Genre_genre_id = ?, Publisher_publisher_id = ? 
                     WHERE book_id = ?";
-            
+
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ssssssdiii", 
-                $isbn, $title, $description, $image_url, 
-                $pub_date, $edition, $price, 
-                $genre_id, $publisher_id, $book_id
+            $stmt->bind_param(
+                "ssssssdiii",
+                $isbn,
+                $title,
+                $description,
+                $image_url,
+                $pub_date,
+                $edition,
+                $price,
+                $genre_id,
+                $publisher_id,
+                $book_id
             );
 
             if ($stmt->execute()) {
@@ -70,17 +78,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("ssssssdiii", 
-                $isbn, $title, $description, $image_url, 
-                $pub_date, $edition, $price, 
-                $admin_id, $genre_id, $publisher_id
+            $stmt->bind_param(
+                "ssssssdiii",
+                $isbn,
+                $title,
+                $description,
+                $image_url,
+                $pub_date,
+                $edition,
+                $price,
+                $admin_id,
+                $genre_id,
+                $publisher_id
             );
 
             if ($stmt->execute()) {
                 $new_book_id = $conn->insert_id;
                 // Create Copies
-                for ($i = 0; $i < $num_copies; $i++) {
-                    $conn->query("INSERT INTO Book_Copy (Book_book_id, status, `condition`) VALUES ($new_book_id, 'Available', 'New')");
+                // Create Copies
+                $numCopies = intval($_POST['copies']); // If this is 0, the loop below won't run
+
+                for ($i = 0; $i < $numCopies; $i++) {
+                    // FIX: Changed $newBookId to $new_book_id to match your code above
+                    $stmt_copy = $conn->prepare("INSERT INTO Book_Copy (Book_book_id, status, `condition`) VALUES (?, 'Available', 'New')");
+                    $stmt_copy->bind_param("i", $new_book_id);
+                    $stmt_copy->execute();
                 }
                 echo json_encode(["status" => "success", "message" => "Book added"]);
             } else {

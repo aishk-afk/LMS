@@ -15,7 +15,7 @@ $genres_result = $conn->query($genre_query);
 
 // 2. Fetch Books with Genre Names and Copy counts
 $query = "SELECT b.*, g.genre_name, 
-          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id) as copies 
+          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id AND status = 'Available') AS copies 
           FROM Book b
           LEFT JOIN Genre g ON b.Genre_genre_id = g.genre_id";
 $result = $conn->query($query);
@@ -30,6 +30,7 @@ $result = $conn->query($query);
     <link rel="stylesheet" href="css/admin.css">
     <link rel="stylesheet" href="css/layout.css">
     <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/catalog.css">
     <link rel='stylesheet' href='https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css'>
 
     <style>
@@ -242,22 +243,26 @@ $result = $conn->query($query);
                             </div>
 
                             <div style="padding: 20px;">
-                                <span class="genre-badge"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
-                                <h3
-                                    style="font-size: 1rem; margin: 0 0 8px 0; color: #1e293b; font-weight: 700; line-height: 1.4; cursor: pointer;"
+                                <span
+                                    class="genre-badge"><?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span>
+
+                                <h3 style="font-size: 1rem; margin: 0 0 8px 0; color: #1e293b; font-weight: 700; line-height: 1.4; cursor: pointer;"
                                     onclick="window.location.href='book_details.php?id=<?php echo $row['book_id']; ?>'">
                                     <?php echo htmlspecialchars($row['title']); ?>
                                 </h3>
-                                <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 15px 0;">Copies: <?php echo $row['copies']; ?>
+                                <p style="font-size: 0.85rem; color: #64748b; margin: 0 0 15px 0;">Copies:
+                                    <?php echo $row['copies']; ?>
                                 </p>
 
                                 <div style="display: flex; gap: 10px;">
                                     <?php if ($isAvailable): ?>
-                                        <button class="btn-borrow" onclick="event.stopPropagation(); borrowBook(<?php echo $row['book_id']; ?>)">
+                                        <button class="btn-borrow"
+                                            onclick="event.stopPropagation(); handleBorrow(<?php echo $row['book_id']; ?>)">
                                             Borrow Book
                                         </button>
                                     <?php else: ?>
-                                        <button class="btn-waitlist" onclick="event.stopPropagation(); joinWaitlist(<?php echo $row['book_id']; ?>)">
+                                        <button class="btn-waitlist"
+                                            onclick="event.stopPropagation(); handleWaitlist(<?php echo $row['book_id']; ?>)">
                                             Join Waitlist
                                         </button>
                                     <?php endif; ?>
@@ -304,19 +309,8 @@ $result = $conn->query($query);
         searchInput.addEventListener('input', applyFilters);
         genreFilter.addEventListener('change', applyFilters);
         statusFilter.addEventListener('change', applyFilters);
-
-        function borrowBook(bookId) {
-            event.stopPropagation();
-            alert('Borrowing process started for Book ID: ' + bookId);
-            // TODO: Add actual borrow request logic here
-        }
-
-        function joinWaitlist(bookId) {
-            event.stopPropagation();
-            alert('Added to waitlist for Book ID: ' + bookId);
-            // TODO: Add actual waitlist request logic here
-        }
     </script>
+    <script src="member_catalog.js"></script>
 </body>
 
 </html>

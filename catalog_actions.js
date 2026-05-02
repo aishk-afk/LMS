@@ -1,24 +1,6 @@
 // catalog_actions.js
 
 // --- ADMIN ACTIONS ---
-function openEditModal(bookId) {
-    fetch(`get_book_details.php?id=${bookId}`)
-        .then(res => res.json())
-        .then(book => {
-            document.getElementById('apiSearchInput').value = book.title;
-            // ... (rest of your population logic)
-            openModal();
-        });
-}
-
-function deleteBook(bookId) {
-    if (confirm("Delete this book?")) {
-        fetch(`delete_book.php?id=${bookId}`)
-            .then(res => res.json())
-            .then(data => location.reload());
-    }
-}
-
 // --- MEMBER ACTIONS ---
 function borrowBook(bookId) {
     fetch('borrow_process.php', {
@@ -256,16 +238,6 @@ function deleteBook(bookId) {
     }
 }
 
-function borrowBook(bookId) {
-    alert("Borrowing process started for Book ID: " + bookId);
-    // Add your fetch('borrow_process.php') logic here
-}
-
-// 6. WAITLIST BUTTON LOGIC (For Members)
-function joinWaitlist(bookId) {
-    alert("Added to waitlist for Book ID: " + bookId);
-    // Add your fetch('waitlist_process.php') logic here
-}
 function updatePreviewFromManual(url) {
     const prevImg = document.getElementById('modalPreviewImg');
     const placeholder = document.getElementById('placeholderText');

@@ -6,7 +6,8 @@ include 'db_config.php';
 
 // 1. FIXED: Use 'user_role' instead of 'role' to match your login.php
 $userId = $_SESSION['user_id'] ?? null;
-$role = $_SESSION['user_role'] ?? 'member'; // Default to member if not set
+$role = strtolower($_SESSION['user_role'] ?? 'member'); // Normalize role to lowercase
+$displayRole = ucfirst($role);
 
 // 2. Dual UI Logic: Check if the user is actually an admin
 $is_admin = ($role === 'admin');
@@ -16,8 +17,8 @@ $genre_query = "SELECT * FROM genre";
 $genres_result = $conn->query($genre_query);
 
 // 4. Fetch Books with Genre Names and Copy counts
-$query = "SELECT b.*, g.genre_name, 
-          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id) as copies 
+$query = "SELECT b.*, g.genre_name,  
+          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id AND status = 'Available') as available_qty 
           FROM Book b
           LEFT JOIN Genre g ON b.Genre_genre_id = g.genre_id";
 $result = $conn->query($query);
@@ -225,9 +226,7 @@ if (!$result) {
                     <br>
                     <small>
                         <?php
-                        // Capitalizes 'admin' to 'Admin'
-                        $role = $_SESSION['user_role'] ?? 'Admin';
-                        echo htmlspecialchars(ucfirst($role));
+                        echo htmlspecialchars($displayRole);
                         ?>
                     </small>
                 </div>
@@ -286,7 +285,7 @@ if (!$result) {
             <div class="book-grid">
                 <?php if ($result && $result->num_rows > 0): ?>
                     <?php while ($row = $result->fetch_assoc()):
-                        $isAvailable = ($row['copies'] > 0); ?>
+                        $isAvailable = ($row['available_qty'] > 0); ?>
 
                         <div class="book-card" data-genre="<?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?>">
                             <div class="book-image"
@@ -430,8 +429,7 @@ if (!$result) {
                     <button type="submit"
                         style="padding: 10px 25px; background:#1e3a8a; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Publish
                         to Catalog</button>
-                </div>
-            </form>
+                </div>                <input type="hidden" id="edit_book_id" name="book_id" value="">            </form>
         </div>
     </div>
 

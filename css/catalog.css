@@ -87,16 +87,24 @@
     cursor: pointer;
 }
 
-.btn-details {
-    padding: 10px 15px;
-    border: 1px solid #e2e8f0;
+.btn-borrow:hover {
+    background: #1d4ed8;
+}
+
+.btn-waitlist {
+    flex: 1;
+    background: #f59e0b;
+    color: white;
+    border: none;
+    padding: 10px;
     border-radius: 8px;
-    background: white;
+    font-weight: 600;
     cursor: pointer;
 }
 
-/* --- MODAL FORM ACTIONS --- */
-/* This fixes the "floating" buttons you see in your screenshot */
+.btn-waitlist:hover {
+    background: #d97706;
+}
 
 .form-actions {
     display: flex;
