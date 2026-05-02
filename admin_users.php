@@ -1,7 +1,19 @@
 <?php
+<<<<<<< HEAD
 session_start();
 // If you have database includes, they go here
 include 'db_config.php'; 
+=======
+include 'db_config.php';
+
+// ✅ FIXED: correct table name
+$result = $conn->query("SELECT * FROM user ORDER BY user_id DESC");
+
+// CHECK IF QUERY FAILED
+if (!$result) {
+    die("Database error: " . $conn->error);
+}
+>>>>>>> 99c7616 (Updated code pacheck)
 ?>
 
 <!DOCTYPE html>
@@ -134,11 +146,69 @@ include 'db_config.php';
 </head>
 
 <body>
+<<<<<<< HEAD
     <div class="admin-container">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <img src="applogo(2).png" alt="Logo" class="logo-icon">
                 <h2 class="brand-name">Library Learning Management Hub</h2>
+=======
+
+<div class="admin-container">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+    <div class="sidebar-header">
+        <img src="applogo(2).png" class="logo-icon">
+        <h2 class="brand-name">Library LMS</h2>
+    </div>
+
+    <nav class="sidebar-nav">
+        <ul>
+            <li><a href="admin_dashboard.html">Dashboard</a></li>
+            <li><a href="admin_catalog.php">Catalog</a></li>
+            <li class="active"><a href="admin_users.php">Users</a></li>
+            <li><a href="admin_waitlist.php">Waitlist</a></li>
+        </ul>
+    </nav>
+</aside>
+
+<!-- MAIN -->
+<main class="main-content">
+
+<header style="margin-bottom:30px;">
+    <h1>Library Members</h1>
+    <p>Manage users and their library activity.</p>
+</header>
+
+<section class="members-list">
+
+<?php if ($result->num_rows > 0): ?>
+
+    <?php while ($row = $result->fetch_assoc()): 
+
+        // ✅ FIXED: match your DB columns
+        $name = htmlspecialchars(($row['first_name'] ?? '') . ' ' . ($row['last_name'] ?? ''));
+        $email = htmlspecialchars($row['email'] ?? 'No email');
+
+        // not in DB yet
+        $college = 'N/A';
+        $section = 'N/A';
+
+        $role = strtolower($row['user_type'] ?? 'member');
+
+        // ROLE STYLE
+        $roleClass = ($role === 'admin') ? 'role-faculty' : 'role-student';
+
+    ?>
+
+    <div class="member-card">
+
+        <!-- LEFT -->
+        <div class="member-main-info">
+            <div class="member-avatar">
+                <?php echo strtoupper($name[0] ?? 'U'); ?>
+>>>>>>> 99c7616 (Updated code pacheck)
             </div>
             <nav class="sidebar-nav">
                 <ul>
@@ -204,6 +274,7 @@ include 'db_config.php';
                     </div>
                 </div>
 
+<<<<<<< HEAD
                 <div class="member-card">
                     <div class="member-main-info">
                         <div class="member-avatar" style="background: #fff7ed; color: #ea580c;">D</div>
@@ -223,6 +294,9 @@ include 'db_config.php';
                         <i class="fi fi-rr-angle-small-down expand-btn"></i>
                     </div>
                 </div>
+=======
+            <div class="stat-badge">0 books</div>
+>>>>>>> 99c7616 (Updated code pacheck)
 
                 <div class="member-card">
                     <div class="member-main-info">
