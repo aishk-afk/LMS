@@ -285,7 +285,12 @@ include 'db_config.php';
                             <td>Jane Doe</td>
                             <td>Mar 10, 2026</td>
                             <td>Mar 15, 2026</td>
-                            <td><button class="btn-return">Return</button></td>
+                            <td>
+                                <button class="btn-return"
+                                    onclick="openReturnModal(<?php echo $row['borrow_id']; ?>, '<?php echo htmlspecialchars($row['title']); ?>')">
+                                    Return
+                                </button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -483,6 +488,24 @@ include 'db_config.php';
             if (window.refreshCharts) {
                 window.refreshCharts(currentPeriod, getDateRange());
             }
+        }
+
+        // Add these functions to the existing script block in admin_dashboard.php
+        function openReturnModal(borrowId, title) {
+            document.getElementById('returnBorrowId').value = borrowId;
+            document.getElementById('returnBookTitle').innerText = title;
+            document.getElementById('returnBookModal').classList.add('active');
+        }
+
+        function closeReturnModal() {
+            document.getElementById('returnBookModal').classList.remove('active');
+        }
+
+        function toggleSeverity() {
+            const condition = document.getElementById('returnCondition').value;
+            const container = document.getElementById('severityContainer');
+            // Tiered logic: Severity only matters if damaged[cite: 2]
+            container.style.display = (condition === 'DAMAGED') ? 'block' : 'none';
         }
 
         // Handle direct date input change
