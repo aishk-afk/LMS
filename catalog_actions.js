@@ -70,10 +70,11 @@ document.getElementById('bookForm').onsubmit = async function (e) {
     }
 
     formData.append('title', document.getElementById('apiSearchInput').value);
+    formData.append('author', document.getElementById('modalAuthor').value);
     formData.append('isbn', document.getElementById('modalISBN').value);
     formData.append('image_url', document.getElementById('modalCover').value);
     formData.append('copies', document.getElementById('modalCopies').value || '1');
-    formData.append('price', '0');
+    formData.append('price', document.getElementById('modalPrice').value || '0');
     formData.append('edition', document.getElementById('modalEdition').value);
     formData.append('pub_date', document.getElementById('modalYear').value);
     formData.append('description', document.getElementById('bookDescription').value);
@@ -183,13 +184,15 @@ function openEditModal(bookId) {
 
             // 2. Fill the form fields with correct IDs
             document.getElementById('apiSearchInput').value = book.title || '';
-            document.getElementById('modalAuthor').value = book.author || '';
+            document.getElementById('modalAuthor').value = book.author_name || '';
             document.getElementById('modalISBN').value = book.ISBN || '';
             document.getElementById('bookDescription').value = book.description || '';
-            document.getElementById('modalPublisher').value = book.publisher || '';
-            document.getElementById('modalYear').value = book.publication_date ? book.publication_date.split('-')[0] : '';
+            document.getElementById('modalPublisher').value = book.publisher_name || '';
+            document.getElementById('modalYear').value = (book.publication_date && book.publication_date !== '0000') ? book.publication_date.split('-')[0] : '';
+            document.getElementById('modalPrice').value = book.price || '';
             document.getElementById('modalEdition').value = book.edition || '';
             document.getElementById('bookGenre').value = book.Genre_genre_id || '';
+            document.getElementById('modalCopies').value = book.copies || 0;
 
             // 3. Display the book cover image
             if (book.image_url) {

@@ -17,10 +17,15 @@ $genre_query = "SELECT * FROM genre";
 $genres_result = $conn->query($genre_query);
 
 // 4. Fetch Books with Genre Names and Copy counts
-$query = "SELECT b.*, g.genre_name,  
-          (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id AND status = 'Available') as available_qty 
-          FROM Book b
-          LEFT JOIN Genre g ON b.Genre_genre_id = g.genre_id";
+$query = "SELECT b.*, g.genre_name, 
+          (SELECT COUNT(*) FROM book_copy WHERE Book_book_id = b.book_id AND status = 'Available') as available_qty,
+          (SELECT CONCAT(a.first_name, ' ', a.last_name) 
+           FROM author a 
+           JOIN book_author_assignment baa ON a.author_id = baa.Author_author_id 
+           WHERE baa.Book_book_id = b.book_id LIMIT 1) as author_name
+          FROM book b
+          LEFT JOIN genre g ON b.Genre_genre_id = g.genre_id
+          GROUP BY b.book_id";
 $result = $conn->query($query);
 
 if (!$result) {
@@ -294,7 +299,7 @@ if (!$result) {
                                 <img src="<?php echo htmlspecialchars($row['image_url']); ?>"
                                     style="width: 100%; height: 100%; object-fit: cover;">
                                 <span class="badge <?php echo $isAvailable ? 'available' : 'unavailable'; ?>">
-                                    <?php echo $isAvailable ? "Available (" . $row['copies'] . ")" : "Unavailable"; ?>
+                                    <?php echo $isAvailable ? "Available (" . $row['available_qty'] . ")" : "Unavailable"; ?>
                                 </span>
                             </div>
 
@@ -396,8 +401,16 @@ if (!$result) {
                                 style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
                             <input type="text" id="modalYear" name="year" placeholder="Year (YYYY)"
                                 style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
-                            <input type="number" id="modalCopies" name="copies" placeholder="Copies" value="1"
-                                style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
+                            <div style="display: grid; gap: 8px;">
+                                <label for="modalPrice" style="font-weight:600;">Price</label>
+                                <input type="number" step="0.01" id="modalPrice" name="price" placeholder="Price"
+                                    style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
+                            </div>
+                            <div style="display: grid; gap: 8px;">
+                                <label for="modalCopies" style="font-weight:600;">Quantity</label>
+                                <input type="number" id="modalCopies" name="copies" placeholder="Copies" value="1"
+                                    style="padding:10px; border:1px solid #e2e8f0; border-radius:6px;">
+                            </div>
                         </div>
 
                         <div style="margin-top: 15px;">
@@ -429,7 +442,8 @@ if (!$result) {
                     <button type="submit"
                         style="padding: 10px 25px; background:#1e3a8a; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Publish
                         to Catalog</button>
-                </div>                <input type="hidden" id="edit_book_id" name="book_id" value="">            </form>
+                </div> <input type="hidden" id="edit_book_id" name="book_id" value="">
+            </form>
         </div>
     </div>
 
@@ -465,41 +479,6 @@ if (!$result) {
                 });
             } catch (e) { resultsDiv.innerHTML = "Error."; }
         }
-
-        document.getElementById('bookForm').onsubmit = async function (e) {
-            e.preventDefault();
-            const formData = new FormData();
-
-            // Check if we're editing or adding
-            const editBookId = document.getElementById('edit_book_id');
-            if (editBookId && editBookId.value) {
-                formData.append('book_id', editBookId.value);
-            }
-
-            formData.append('title', document.getElementById('apiSearchInput').value);
-            formData.append('isbn', document.getElementById('modalISBN').value);
-            formData.append('image_url', document.getElementById('modalCover').value);
-            formData.append('copies', document.getElementById('modalCopies').value || '1');
-            formData.append('price', '0');
-            formData.append('edition', document.getElementById('modalEdition').value);
-            formData.append('pub_date', document.getElementById('modalYear').value);
-            formData.append('description', document.getElementById('bookDescription').value);
-            formData.append('genre_id', document.getElementById('bookGenre').value);
-            formData.append('publisher_name', document.getElementById('modalPublisher').value);
-
-            try {
-                const response = await fetch('save_book.php', { method: 'POST', body: formData });
-                const text = await response.text();
-                const result = JSON.parse(text);
-                if (result.status === 'success') {
-                    const isEditing = editBookId && editBookId.value;
-                    alert(isEditing ? "Book Updated!" : "Book Added!");
-                    location.reload();
-                } else {
-                    alert("Error: " + result.message);
-                }
-            } catch (err) { console.error(err); }
-        };
 
         // FIXED FILTERING LOGIC
         document.addEventListener('DOMContentLoaded', function () {
@@ -563,7 +542,7 @@ if (!$result) {
                 editBookId.value = '';
             }
         }
-        
+
         function updatePreviewFromManual(url) {
             const prevImg = document.getElementById('modalPreviewImg');
             const placeholder = document.getElementById('placeholderText');
@@ -580,7 +559,7 @@ if (!$result) {
             }
         }
     </script>
-    
+
     <script src="catalog_actions.js"></script>
 </body>
 
