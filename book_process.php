@@ -11,9 +11,9 @@ if (!$userId) {
     exit;
 }
 
-// 1. Find one 'Available' copy from the Book_Copy table
-$stmt = $conn->prepare("SELECT copy_id FROM Book_Copy WHERE Book_book_id = ? AND status = 'Available' LIMIT 1");
-$stmt->bind_param("i", $bookId);
+// 1. Find one 'Available' copy from the book_copy table
+$stmt = $conn->prepare("SELECT copy_id FROM book_copy WHERE Book_book_id = ? AND status = 'Available' LIMIT 1");
+$stmt->bind_param("s", $bookId);
 $stmt->execute();
 $res = $stmt->get_result();
 
@@ -25,7 +25,7 @@ if ($copy = $res->fetch_assoc()) {
     $conn->begin_transaction();
     try {
         // 2. Change the status to 'Borrowed'.
-        $stmt_update = $conn->prepare("UPDATE Book_Copy SET status = 'Borrowed' WHERE copy_id = ?");
+        $stmt_update = $conn->prepare("UPDATE book_copy SET status = 'Borrowed' WHERE copy_id = ?");
         $stmt_update->bind_param("s", $copyId);
         $stmt_update->execute();
         $stmt_update->close();

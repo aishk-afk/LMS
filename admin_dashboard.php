@@ -270,6 +270,7 @@ include 'db_config.php';
                         <tr>
                             <th>BOOK</th>
                             <th>BORROWER</th>
+                            <th>DATE BORROWED</th>
                             <th>DUE DATE</th>
                             <th>ACTION</th>
                         </tr>
@@ -282,6 +283,7 @@ include 'db_config.php';
                                 </div>
                             </td>
                             <td>Jane Doe</td>
+                            <td>Mar 10, 2026</td>
                             <td>Mar 15, 2026</td>
                             <td><button class="btn-return">Return</button></td>
                         </tr>

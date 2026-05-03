@@ -3,7 +3,7 @@
 // --- ADMIN ACTIONS ---
 // --- MEMBER ACTIONS ---
 function borrowBook(bookId) {
-    fetch('borrow_process.php', {
+    fetch('book_process.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `book_id=${bookId}`

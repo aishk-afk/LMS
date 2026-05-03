@@ -2,8 +2,14 @@
 session_start();
 include 'db_config.php';
 
-// FETCH USERS
-$result = $conn->query("SELECT * FROM user ORDER BY user_id DESC");
+$sql = "SELECT u.user_id, u.first_name, u.last_name, u.email, u.user_type, m.Department, m.Course, m.Section,
+    (SELECT COUNT(*) FROM book_transaction bt WHERE bt.Member_user_id = u.user_id AND bt.status IN ('Borrowed', 'Overdue')) AS borrow_count,
+    (SELECT COUNT(*) FROM book_transaction bt WHERE bt.Member_user_id = u.user_id AND bt.status = 'Overdue') AS overdue_count
+    FROM user u
+    LEFT JOIN member m ON u.user_id = m.user_id
+    ORDER BY u.user_id DESC";
+
+$result = $conn->query($sql);
 
 if (!$result) {
     die("Database error: " . $conn->error);
@@ -31,40 +37,66 @@ if (!$result) {
 <aside class="sidebar">
     <div class="sidebar-header">
         <img src="applogo(2).png" class="logo-icon">
-        <h2 class="brand-name">Library LMS</h2>
+        <h2 class="brand-name">Library Learning Management Hub </h2>
     </div>
 
     <nav class="sidebar-nav">
         <ul>
-            <li><a href="admin_dashboard.php">Dashboard</a></li>
-            <li><a href="admin_catalog.php">Catalog</a></li>
-            <li class="active"><a href="admin_users.php">Users</a></li>
-            <li><a href="admin_waitlist.php">Waitlist</a></li>
+            <li class="nav-item"><a href="admin_dashboard.php"><i class="fi fi-rr-home"></i> Dashboard</a></li>
+            <li class="nav-item"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
+            <li class="nav-item active"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a></li>
+            <li class="nav-item"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
+            <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a></li>
         </ul>
     </nav>
 
     <div class="sidebar-footer">
+         <?php
+            $first = $_SESSION['user_name'] ?? '';
+            $last = $_SESSION['last_name'] ?? '';
+            $role = $_SESSION['user_role'] ?? 'admin';
+            $displayName = trim($first . ' ' . $last);
+            if ($displayName === '') {
+                $displayName = 'Admin';
+            }
+            $displayRole = ucfirst($role);
+        ?>
         <div class="user-info">
-            <strong>
-                <?php
-                $first = $_SESSION['user_name'] ?? 'Admin';
-                $last = $_SESSION['last_name'] ?? '';
-                echo htmlspecialchars($first . ' ' . $last);
-                ?>
-            </strong>
+            <strong><?php echo htmlspecialchars($displayName); ?></strong>
             <br>
-            <small>
-                <?php echo htmlspecialchars(ucfirst($_SESSION['user_role'] ?? 'Admin')); ?>
-            </small>
+            <small><?php echo htmlspecialchars($displayRole); ?></small>
         </div>
-
-        <a href="index.php" class="logout-link">Logout</a>
+        <a href="index.php" class="logout-link"><i class="fi fi-rr-exit"></i> Logout</a>
     </div>
 </aside>
 
 <!-- MAIN -->
 <main class="main-content">
 
+    <section class="page-header">
+        <div>
+            <h1>Library Members</h1>
+            <p>Manage users, view borrowed books, and issue returns.</p>
+        </div>
+        <a href="#" class="btn-primary"><i class="fi fi-rr-plus"></i> Add User</a>
+    </section>
+
+    <section class="users-toolbar">
+        <div class="search-container">
+            <i class="fi fi-rr-search"></i>
+            <input type="text" class="search-input" id="userSearch" placeholder="Search by name, email, college, or section...">
+        </div>
+
+        <div class="filter-group" role="group" aria-label="User filters">
+            <button class="filter-pill active" data-filter="all">All</button>
+            <button class="filter-pill" data-filter="student">Student</button>
+            <button class="filter-pill" data-filter="faculty">Faculty</button>
+        </div>
+
+        <div class="result-count"><?php echo $result->num_rows; ?> results</div>
+    </section>
+
+    <section class="members-list" id="membersList">
 <header style="margin-bottom:30px;">
     <h1>Library Members</h1>
     <p>Manage users and their library activity.</p>

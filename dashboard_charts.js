@@ -64,7 +64,7 @@ async function updateActiveBorrowsTable(startDate, endDate) {
         
         tbody.innerHTML = '';
         if (data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">No active borrows</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #64748b;">No active borrows</td></tr>';
             return;
         }
 
@@ -72,12 +72,13 @@ async function updateActiveBorrowsTable(startDate, endDate) {
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td><div style="display:flex; align-items:center; gap:12px;">
-                    <div class="book-img-holder"><img src="book_placeholder.jpg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2245%22 height=%2260%22%3E%3Crect fill=%22%23e2e8f0%22 width=%2245%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%2364748b%22 font-size=%2210%22%3EBook%3C/text%3E%3C/svg%3E'"></div>
+                    <div class="book-img-holder"><img src="${row.image_url || 'book_placeholder.jpg'}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2245%22 height=%2260%22%3E%3Crect fill=%22%23e2e8f0%22 width=%2245%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%2364748b%22 font-size=%2210%22%3EBook%3C/text%3E%3C/svg%3E'"></div>
                     ${row.title}
                 </div></td>
-                <td>${row.user_id}</td>
+                <td>${row.borrower_name || row.user_id}</td>
+                <td>${row.borrow_date}</td>
                 <td>${row.due_date}</td>
-                <td><button class="btn-return">Return</button></td>
+                <td><button class="btn-return" data-borrow-id="${row.borrow_id}" onclick="handleReturnBook(this, event)">Return</button></td>
             `;
             tbody.appendChild(tr);
         });
@@ -107,15 +108,55 @@ async function updateOverdueTable(startDate, endDate) {
                     <div class="book-img-holder"><img src="book_placeholder.jpg" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2245%22 height=%2260%22%3E%3Crect fill=%22%23e2e8f0%22 width=%2245%22 height=%2260%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%2364748b%22 font-size=%2210%22%3EBook%3C/text%3E%3C/svg%3E'"></div>
                     ${row.title}
                 </div></td>
-                <td>${row.user_id}</td>
+                <td>${row.borrower_name || row.user_id}</td>
                 <td style="color: #ef4444; font-weight: 600;">${row.days_overdue} days</td>
                 <td>₱${row.fine_amount || 0}</td>
-                <td><button class="btn-return" style="background:#ef4444">Return</button></td>
+                <td><button class="btn-return" data-borrow-id="${row.borrow_id}" onclick="handleReturnBook(this, event)" style="background:#ef4444">Return</button></td>
             `;
             tbody.appendChild(tr);
         });
     } catch (error) {
         console.error('Error updating overdue table:', error);
+    }
+}
+
+// Handle book return from admin dashboard
+async function handleReturnBook(button, event) {
+    event.preventDefault();
+    const borrowId = button.getAttribute('data-borrow-id');
+    
+    if (!borrowId) {
+        alert('Error: Missing borrow ID');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to mark this book as returned?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('return_book.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `borrow_id=${encodeURIComponent(borrowId)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+            alert('Book returned successfully');
+            // Refresh the active borrows table by calling updateAllCharts if available
+            if (window.updateAllCharts) {
+                window.updateAllCharts();
+            } else {
+                location.reload();
+            }
+        } else {
+            alert('Error: ' + (result.message || 'Failed to return book'));
+        }
+    } catch (error) {
+        console.error('Error returning book:', error);
+        alert('Error returning book');
     }
 }
 
@@ -138,12 +179,9 @@ async function updateTopBorrowers(startDate, endDate) {
             div.className = 'borrower-item';
             div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;';
             
-            const initials = row.user_id ? row.user_id.substring(0, 1).toUpperCase() : '?';
+            const borrowerName = row.borrower_name || row.user_id || 'Unknown';
             div.innerHTML = `
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div class="avatar" style="background:#eff6ff; color:#3b82f6; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:600;">${initials}</div>
-                    <div><strong>${row.user_id}</strong><br><small style="color:#64748b;">Borrowed ${row.borrow_count} books</small></div>
-                </div>
+                <div><strong>${borrowerName}</strong></div>
                 <span style="font-weight:600; color:#3b82f6;">${row.borrow_count}x</span>
             `;
             container.appendChild(div);

@@ -125,9 +125,12 @@ if ($type === 'genrePopularity') {
 
 // Get top borrowers
 if ($type === 'topBorrowers') {
-    $sql = "SELECT m.user_id, COUNT(bt.borrow_id) as borrow_count
+    $sql = "SELECT m.user_id,
+                   CASE WHEN TRIM(CONCAT(u.first_name, ' ', u.last_name)) = '' THEN m.user_id ELSE TRIM(CONCAT(u.first_name, ' ', u.last_name)) END AS borrower_name,
+                   COUNT(bt.borrow_id) as borrow_count
             FROM member m
             INNER JOIN book_transaction bt ON m.user_id = bt.Member_user_id
+            LEFT JOIN user u ON m.user_id = u.user_id
             WHERE DATE(bt.borrow_date) >= '$startDate'
               AND DATE(bt.borrow_date) <= '$endDate'
             GROUP BY m.user_id
@@ -189,14 +192,17 @@ if ($type === 'fineSummary') {
 
 // Get active borrow details
 if ($type === 'activeBorrowDetails') {
-    $sql = "SELECT bt.borrow_id, b.title, m.user_id, 
-            DATE_FORMAT(bt.due_date, '%b %d, %Y') as due_date
+    $sql = "SELECT bt.borrow_id, b.title,
+                   CASE WHEN TRIM(CONCAT(u.first_name, ' ', u.last_name)) = '' THEN m.user_id ELSE TRIM(CONCAT(u.first_name, ' ', u.last_name)) END AS borrower_name,
+                   DATE_FORMAT(bt.borrow_date, '%b %d, %Y') as borrow_date,
+                   DATE_FORMAT(bt.due_date, '%b %d, %Y') as due_date,
+                   b.image_url
             FROM book_transaction bt
             INNER JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id
             INNER JOIN book b ON bc.Book_book_id = b.book_id
             INNER JOIN member m ON bt.Member_user_id = m.user_id
-            WHERE bt.status = 'Borrowed' 
-            AND bt.borrow_date BETWEEN '$startDate' AND '$endDate'
+            LEFT JOIN user u ON m.user_id = u.user_id
+            WHERE bt.status = 'Borrowed'
             ORDER BY bt.due_date ASC
             LIMIT 10";
     $data = executeQuery($conn, $sql);
@@ -206,21 +212,24 @@ if ($type === 'activeBorrowDetails') {
 
 // Get overdue details
 if ($type === 'overdueDetails') {
-    $sql = "SELECT bt.borrow_id, b.title, m.user_id, 
-            DATEDIFF(CURDATE(), bt.due_date) as days_overdue,
-            (DATEDIFF(CURDATE(), bt.due_date) * f.fine_rate) as fine_amount
+    $sql = "SELECT bt.borrow_id, b.title,
+                   CASE WHEN TRIM(CONCAT(u.first_name, ' ', u.last_name)) = '' THEN m.user_id ELSE TRIM(CONCAT(u.first_name, ' ', u.last_name)) END AS borrower_name,
+                   DATEDIFF(CURDATE(), bt.due_date) as days_overdue,
+                   (DATEDIFF(CURDATE(), bt.due_date) * COALESCE(f.fine_rate, 0)) as fine_amount
             FROM book_transaction bt
             INNER JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id
             INNER JOIN book b ON bc.Book_book_id = b.book_id
             INNER JOIN member m ON bt.Member_user_id = m.user_id
+            LEFT JOIN user u ON m.user_id = u.user_id
             LEFT JOIN fine f ON bt.borrow_id = f.Book_Transaction_borrow_id
-            WHERE bt.status = 'Overdue' 
+            WHERE bt.status = 'Overdue'
             AND bt.due_date < CURDATE()
             ORDER BY bt.due_date ASC
             LIMIT 10";
     $data = executeQuery($conn, $sql);
     echo json_encode($data);
     exit;
+
 }
 
 //Fine summary
