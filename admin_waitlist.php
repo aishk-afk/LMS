@@ -2,17 +2,27 @@
 session_start();
 include 'db_config.php';
 
-$sql = "SELECT b.book_id, b.title, b.image_url, b.edition, 
-        GROUP_CONCAT(u.first_name, ' ', u.last_name ORDER BY w.request_date ASC SEPARATOR '||') as borrower_names,
-        GROUP_CONCAT(u.email ORDER BY w.request_date ASC SEPARATOR '||') as borrower_emails,
-        GROUP_CONCAT(u.user_type ORDER BY w.request_date ASC SEPARATOR '||') as borrower_types,
-        COUNT(w.waitlist_id) as waiting_count
+$sql = "SELECT b.book_id, b.title, b.image_url, b.edition,
+        COALESCE((SELECT COUNT(*) FROM book_copy bc WHERE bc.Book_book_id = b.book_id AND bc.status = 'Available'), 0) AS available_copies,
+        GROUP_CONCAT(CONCAT(u.first_name, ' ', u.last_name) ORDER BY w.request_date ASC SEPARATOR '||') AS borrower_names,
+        GROUP_CONCAT(u.email ORDER BY w.request_date ASC SEPARATOR '||') AS borrower_emails,
+        GROUP_CONCAT(u.user_type ORDER BY w.request_date ASC SEPARATOR '||') AS borrower_types,
+        COUNT(w.waitlist_id) AS waiting_count
         FROM waitlist w
         JOIN book b ON w.Book_book_id = b.book_id
-        JOIN user u ON w.Member_user_id = u.user_id
+        JOIN `user` u ON w.Member_user_id = u.user_id
         GROUP BY b.book_id";
 
 $waitlist_result = $conn->query($sql);
+
+$waitlist_rows = [];
+$total_waitlisted_patrons = 0;
+if ($waitlist_result) {
+    while ($row = $waitlist_result->fetch_assoc()) {
+        $waitlist_rows[] = $row;
+        $total_waitlisted_patrons += $row['waiting_count'];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -63,10 +73,184 @@ $waitlist_result = $conn->query($sql);
             border-color: #2563eb;
         }
 
-        /* Empty State Box from Figma */
+        .waitlist-card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .waitlist-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+        }
+
+        .waitlist-card-top {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 24px;
+        }
+
+        .book-card-info {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex: 1;
+            min-width: 320px;
+        }
+
+        .book-card-info img {
+            width: 80px;
+            height: 104px;
+            border-radius: 16px;
+            object-fit: cover;
+            flex-shrink: 0;
+            background: #f8fafc;
+        }
+
+        .waitlist-details h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            color: #0f172a;
+        }
+
+        .waitlist-details .subtitle {
+            margin: 8px 0 0;
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #1d4ed8;
+            background: #eff6ff;
+        }
+
+        .chip-unavailable {
+            color: #b91c1c;
+            background: #fef2f2;
+        }
+
+        .waiting-badge {
+            min-width: 92px;
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .waiting-badge span {
+            font-size: 0.72rem;
+            color: #92400e;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .waiting-badge strong {
+            font-size: 1.55rem;
+            color: #c2410c;
+            line-height: 1;
+        }
+
+        .waitlisted-section h4 {
+            font-size: 0.85rem;
+            color: #64748b;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin: 0 0 18px 0;
+        }
+
+        .borrower-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 16px 0;
+            border-bottom: 1px solid #f8fafc;
+        }
+
+        .borrower-row:last-child {
+            border-bottom: none;
+        }
+
+        .borrower-order {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fde68a;
+            color: #92400e;
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+        }
+
+        .borrower-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #dbeafe;
+            color: #1d4ed8;
+            display: grid;
+            place-items: center;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .borrower-name {
+            margin: 0;
+            font-size: 0.95rem;
+            color: #111827;
+            font-weight: 700;
+        }
+
+        .borrower-meta {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 0.82rem;
+        }
+
+        .status-pill {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            border-radius: 999px;
+            padding: 10px 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.84rem;
+            cursor: default;
+        }
+
         .empty-state-container {
             width: 100%;
-            height: 400px;
+            min-height: 300px;
             border: 2px dashed #e2e8f0;
             border-radius: 24px;
             display: flex;
@@ -74,8 +258,9 @@ $waitlist_result = $conn->query($sql);
             align-items: center;
             justify-content: center;
             text-align: center;
-            background: rgba(248, 250, 252, 0.5);
+            background: rgba(248, 250, 252, 0.6);
             margin-top: 20px;
+            padding: 40px 24px;
         }
 
         .empty-icon-circle {
@@ -92,17 +277,17 @@ $waitlist_result = $conn->query($sql);
         .empty-icon-circle i {
             font-size: 32px;
             color: #3b82f6;
-            opacity: 0.6;
+            opacity: 0.7;
         }
 
         .empty-state-container h2 {
-            font-size: 20px;
+            font-size: 1.4rem;
             color: #1e293b;
-            margin: 0 0 8px 0;
+            margin: 0 0 10px 0;
         }
 
         .empty-state-container p {
-            font-size: 14px;
+            font-size: 0.95rem;
             color: #64748b;
             margin: 0;
         }
@@ -154,100 +339,105 @@ $waitlist_result = $conn->query($sql);
 
         <main class="main-content">
             <div class="header-section" style="margin-bottom: 30px;">
-                <h1 style="font-size: 1.8rem; color: #1e3a8a; margin: 0;">Waitlist Management</h1>
-                <p style="color: #64748b;">
-                    <?php echo ($waitlist_result && $waitlist_result->num_rows > 0) ? $waitlist_result->num_rows : '0'; ?>
-                    book(s) with active waiting patrons
-                </p>
+                <div style="display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
+                    <div>
+                        <h1 style="font-size: 1.8rem; color: #1e3a8a; margin: 0;">Waitlist Management</h1>
+                        <p style="color: #64748b; margin-top: 8px;">
+                            <?php echo count($waitlist_rows) . ' book' . (count($waitlist_rows) === 1 ? '' : 's') . ' with '; ?>
+                            <?php echo $total_waitlisted_patrons . ' total waiting patron' . ($total_waitlisted_patrons === 1 ? '' : 's'); ?>
+                        </p>
+                    </div>
+                    <div class="search-container">
+                        <i class="fi fi-rr-search"></i>
+                        <input id="waitlistSearch" class="search-input" type="text" placeholder="Search by title or borrower...">
+                    </div>
+                </div>
             </div>
 
-            <?php if ($waitlist_result && $waitlist_result->num_rows > 0): ?>
-                <?php while ($row = $waitlist_result->fetch_assoc()):
+            <?php if (count($waitlist_rows) > 0): ?>
+                <?php foreach ($waitlist_rows as $row):
                     $names = explode('||', $row['borrower_names']);
                     $emails = explode('||', $row['borrower_emails']);
                     $types = explode('||', $row['borrower_types']);
+                    $isAvailable = ($row['available_copies'] > 0);
+                    $bookCategory = 'General Use';
+                    $searchText = strtolower($row['title'] . ' ' . $row['edition'] . ' ' . $bookCategory . ' ' . implode(' ', $names) . ' ' . implode(' ', $emails));
                     ?>
-                    <div
-                        style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 24px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-
-                        <div style="display: flex; gap: 20px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px;">
-                            <img src="<?php echo htmlspecialchars($row['image_url']); ?>"
-                                style="width: 70px; height: 95px; border-radius: 8px; object-fit: cover;">
-                            <div style="flex-grow: 1;">
-                                <h2 style="font-size: 1.2rem; color: #1e293b; margin: 0;">
-                                    <?php echo htmlspecialchars($row['title']); ?>
-                                </h2>
-                                <p style="color: #64748b; font-size: 0.85rem; margin: 4px 0;">
-                                    <?php echo htmlspecialchars($row['edition']); ?>
-                                </p>
-                                <div style="display: flex; gap: 8px; margin-top: 10px;">
-                                    <span
-                                        style="background: #eff6ff; color: #3b82f6; padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Home-Use</span>
-                                    <span
-                                        style="background: #fef2f2; color: #ef4444; padding: 4px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">Unavailable</span>
+                    <div class="waitlist-card" data-search="<?php echo htmlspecialchars($searchText); ?>">
+                        <div class="waitlist-card-top">
+                            <div class="book-card-info">
+                                <img src="<?php echo htmlspecialchars($row['image_url']); ?>" alt="<?php echo htmlspecialchars($row['title']); ?>">
+                                <div class="waitlist-details">
+                                    <h2><?php echo htmlspecialchars($row['title']); ?></h2>
+                                    <p class="subtitle"><?php echo htmlspecialchars($row['edition']); ?></p>
+                                    <div class="chip-row">
+                                        <span class="chip"><?php echo htmlspecialchars($bookCategory); ?></span>
+                                        <span class="chip chip-unavailable"><?php echo $isAvailable ? 'Available' : 'Unavailable'; ?></span>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div
-                                style="background: #fff7ed; border: 1px solid #ffedd5; padding: 8px 15px; border-radius: 12px; text-align: center; min-width: 70px;">
-                                <p
-                                    style="margin: 0; font-size: 0.65rem; color: #c2410c; font-weight: 700; text-transform: uppercase;">
-                                    Waiting</p>
-                                <p style="margin: 0; font-size: 1.4rem; color: #ea580c; font-weight: 800;">
-                                    <?php echo $row['waiting_count']; ?>
-                                </p>
+                            <div class="waiting-badge">
+                                <span>Waiting</span>
+                                <strong><?php echo $row['waiting_count']; ?></strong>
                             </div>
                         </div>
 
-                        <div style="margin-top: 20px;">
-                            <h4
-                                style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 15px; font-weight: 600; text-transform: uppercase;">
-                                Waitlisted Borrowers</h4>
+                        <div class="waitlisted-section" style="margin-top: 22px;">
+                            <h4>Waitlisted Borrowers</h4>
 
-                            <?php for ($i = 0; $i < count($names); $i++): ?>
-                                <div
-                                    style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: <?php echo ($i < count($names) - 1) ? '1px solid #f8fafc' : 'none'; ?>;">
-                                    <div style="display: flex; align-items: center; gap: 15px;">
-                                        <span style="color: #ea580c; font-weight: 700; width: 15px; font-size: 0.9rem;">
-                                            <?php echo ($i + 1); ?>
-                                        </span>
-                                        <div
-                                            style="width: 38px; height: 38px; background: #dbeafe; color: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem;">
-                                            <?php echo strtoupper(substr($names[$i], 0, 1)); ?>
-                                        </div>
+                            <?php foreach ($names as $i => $borrower): ?>
+                                <div class="borrower-row">
+                                    <div style="display: flex; align-items: center; gap: 14px;">
+                                        <div class="borrower-order"><?php echo ($i + 1); ?></div>
+                                        <div class="borrower-avatar"><?php echo strtoupper(substr($borrower, 0, 1)); ?></div>
                                         <div>
-                                            <p style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #1e293b;">
-                                                <?php echo htmlspecialchars($names[$i]); ?>
-                                            </p>
-                                            <p style="margin: 0; font-size: 0.75rem; color: #64748b;">
-                                                <?php echo htmlspecialchars($types[$i]); ?> •
-                                                <?php echo htmlspecialchars($emails[$i]); ?>
-                                            </p>
+                                            <p class="borrower-name"><?php echo htmlspecialchars($borrower); ?></p>
+                                            <p class="borrower-meta"><?php echo htmlspecialchars($types[$i]); ?> · <?php echo htmlspecialchars($emails[$i]); ?></p>
                                         </div>
                                     </div>
-                                    <button
-                                        style="background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; display: flex; align-items: center; gap: 6px; cursor: pointer;">
-                                        <i class="fi fi-rr-bell-ring" style="font-size: 0.75rem;"></i> Unavailable
-                                    </button>
+                                    <button class="status-pill"><i class="fi fi-rr-bell-ring"></i> Unavailable</button>
                                 </div>
-                            <?php endfor; ?>
+                            <?php endforeach; ?>
                         </div>
                     </div>
-                <?php endwhile; ?>
-
+                <?php endforeach; ?>
             <?php else: ?>
-                <div
-                    style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 60vh; text-align: center;">
-                    <div
-                        style="background: #f1f5f9; width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
-                        <i class="fi fi-rr-clock" style="font-size: 2rem; color: #94a3b8;"></i>
+                <div id="waitlistEmptyState" class="empty-state-container">
+                    <div class="empty-icon-circle">
+                        <i class="fi fi-rr-clock"></i>
                     </div>
-                    <h2 style="color: #1e293b; margin: 0; font-size: 1.5rem;">No active waitlists</h2>
-                    <p style="color: #64748b; margin-top: 8px;">No books currently have users on their waitlist.</p>
+                    <h2>No active waitlists</h2>
+                    <p>No books currently have users on their waitlist.</p>
                 </div>
             <?php endif; ?>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchField = document.getElementById('waitlistSearch');
+            const cards = document.querySelectorAll('.waitlist-card');
+            const emptyState = document.getElementById('waitlistEmptyState');
+
+            function updateVisibility() {
+                const query = searchField.value.trim().toLowerCase();
+                let visibleCount = 0;
+
+                cards.forEach(card => {
+                    const text = card.dataset.search || '';
+                    const visible = !query || text.includes(query);
+                    card.style.display = visible ? 'block' : 'none';
+                    if (visible) visibleCount++;
+                });
+
+                if (emptyState) {
+                    emptyState.style.display = visibleCount === 0 ? 'flex' : 'none';
+                }
+            }
+
+            searchField.addEventListener('input', updateVisibility);
+        });
+    </script>
 </body>
 
 </html>
