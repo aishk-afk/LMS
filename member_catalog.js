@@ -1,13 +1,19 @@
 function handleBorrow(bookId) {
-    if (confirm("Do you want to borrow this book for 7 days?")) {
-        executeAction('borrow_process.php', bookId);
-    }
+    showConfirmModal(
+        'Confirm Borrow',
+        'Are you sure you want to borrow this book? This item is due in 14 days.',
+        'Borrow Book',
+        () => executeAction('book_process.php', bookId)
+    );
 }
 
 function handleWaitlist(bookId) {
-    if (confirm("No copies available. Join the waitlist to be notified?")) {
-        executeAction('waitlist_process.php', bookId);
-    }
+    showConfirmModal(
+        'Join Waitlist',
+        'No copies are currently available. Join the waitlist to be notified when a copy is returned.',
+        'Join Waitlist',
+        () => executeAction('waitlist_process.php', bookId)
+    );
 }
 
 function executeAction(url, id) {

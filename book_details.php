@@ -13,10 +13,14 @@ if ($id <= 0) {
     die("Invalid Book ID.");
 }
 
-// Optimized Query: Fetches Book details, Publisher name, and Genre name
+// Optimized Query: Fetches Book details, Publisher name, Genre name, and author name
 $query = "SELECT b.*, 
           p.publisher_name, 
           g.genre_name,
+          (SELECT CONCAT(a.first_name, ' ', a.last_name)
+           FROM author a
+           JOIN book_author_assignment baa ON a.author_id = baa.Author_author_id
+           WHERE baa.Book_book_id = b.book_id LIMIT 1) AS author_name,
           (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id) as total_copies,
           (SELECT COUNT(*) FROM Book_Copy WHERE Book_book_id = b.book_id AND status = 'Available') as available_copies
           FROM Book b
@@ -186,7 +190,7 @@ if (!$row) {
             <h1 class="book-title"><?php echo htmlspecialchars($row['title']); ?></h1>
             <div class="book-edition"><?php echo htmlspecialchars($row['edition'] ?? 'Standard Edition'); ?></div>
 
-            <p class="book-author">By <span>James Dashner</span></p>
+            <p class="book-author">By <span><?php echo htmlspecialchars($row['author_name'] ?? 'Unknown Author'); ?></span></p>
 
             <p class="book-desc"><?php echo nl2br(htmlspecialchars($row['description'])); ?></p>
 

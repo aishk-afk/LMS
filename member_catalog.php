@@ -45,6 +45,74 @@ $result = $conn->query($query);
             padding: 40px;
         }
 
+        .confirm-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .confirm-modal-overlay.active {
+            display: flex;
+        }
+
+        .confirm-modal {
+            width: 100%;
+            max-width: 460px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+            padding: 32px;
+            position: relative;
+        }
+
+        .confirm-close {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            border: none;
+            background: transparent;
+            font-size: 1.4rem;
+            color: #475569;
+            cursor: pointer;
+        }
+
+        .confirm-modal h2 {
+            margin: 0 0 12px;
+            font-size: 1.4rem;
+            color: #0f172a;
+        }
+
+        .confirm-modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .confirm-primary {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .confirm-secondary {
+            background: #f8fafc;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            padding: 12px 22px;
+            border-radius: 12px;
+            cursor: pointer;
+        }
+
         /* Figma-style Search and Filter Bar */
         .header-section {
             display: flex;
@@ -275,13 +343,42 @@ $result = $conn->query($query);
         </main>
     </div>
 
-    <div id="addBookModal"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div id="confirmModal" class="confirm-modal-overlay" onclick="closeConfirmModal()">
+        <div class="confirm-modal" onclick="event.stopPropagation();">
+            <button class="confirm-close" onclick="closeConfirmModal()">×</button>
+            <div class="confirm-top">
+                <h2 id="confirmModalTitle">Confirm Action</h2>
+                <p id="confirmModalText" style="margin:0; color:#475569; line-height:1.6;"></p>
+            </div>
+            <div class="confirm-modal-actions">
+                <button class="confirm-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button id="confirmModalConfirm" class="confirm-primary">Confirm</button>
+            </div>
+        </div>
     </div>
 
     <script>
-        function openModal() { document.getElementById('addBookModal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('addBookModal').style.display = 'none'; }
+        function closeConfirmModal() {
+            const modal = document.getElementById('confirmModal');
+            modal.classList.remove('active');
+            const confirmButton = document.getElementById('confirmModalConfirm');
+            confirmButton.onclick = null;
+        }
+
+        function showConfirmModal(title, message, confirmLabel, callback) {
+            document.getElementById('confirmModalTitle').innerText = title;
+            document.getElementById('confirmModalText').innerText = message;
+            const confirmButton = document.getElementById('confirmModalConfirm');
+            confirmButton.innerText = confirmLabel;
+            confirmButton.onclick = () => {
+                closeConfirmModal();
+                callback();
+            };
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        function openModal() { document.getElementById('confirmModal').classList.add('active'); }
+        function closeModal() { closeConfirmModal(); }
 
         // Figma Filtering Logic
         const searchInput = document.getElementById('catalogSearch');

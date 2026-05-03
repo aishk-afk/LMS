@@ -19,18 +19,22 @@ $res = $stmt->get_result();
 
 if ($copy = $res->fetch_assoc()) {
     $copyId = $copy['copy_id'];
-    $dueDate = date('Y-m-d', strtotime('+7 days'));
+    $dueDate = date('Y-m-d', strtotime('+14 days'));
+    $borrowId = uniqid('BT-');
 
     $conn->begin_transaction();
     try {
-        // 2. Change the status to 'Borrowed'. 
-        // Next time the catalog loads, the COUNT of 'Available' books will be 1 less.
-        $conn->query("UPDATE Book_Copy SET status = 'Borrowed' WHERE copy_id = $copyId");
+        // 2. Change the status to 'Borrowed'.
+        $stmt_update = $conn->prepare("UPDATE Book_Copy SET status = 'Borrowed' WHERE copy_id = ?");
+        $stmt_update->bind_param("s", $copyId);
+        $stmt_update->execute();
+        $stmt_update->close();
 
-        // 3. Create the Loan Record
-        $loan = $conn->prepare("INSERT INTO Loan (loan_date, due_date, status, User_user_id, Book_Copy_copy_id) VALUES (NOW(), ?, 'Active', ?, ?)");
-        $loan->bind_param("sii", $dueDate, $userId, $copyId);
-        $loan->execute();
+        // 3. Create the transaction record
+        $stmt_trans = $conn->prepare("INSERT INTO book_transaction (borrow_id, Book_Copy_copy_id, Member_user_id, borrow_date, due_date, status) VALUES (?, ?, ?, NOW(), ?, 'Borrowed')");
+        $stmt_trans->bind_param("ssss", $borrowId, $copyId, $userId, $dueDate);
+        $stmt_trans->execute();
+        $stmt_trans->close();
 
         $conn->commit();
         echo json_encode(["status" => "success", "message" => "Book borrowed! Return by $dueDate"]);
