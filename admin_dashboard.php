@@ -296,6 +296,47 @@ include 'db_config.php';
                 </table>
             </div>
 
+            <!-- Enhanced Return Assessment Modal -->
+<div id="returnBookModal" class="modal" style="display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
+    <div class="modal-content" style="background:white; margin:10% auto; padding:20px; border-radius:12px; width:400px;">
+        <h3>Assess Return: <span id="returnBookTitle"></span></h3>
+        <hr>
+        <form action="process_return.php" method="POST">
+            <input type="hidden" name="borrow_id" id="returnBorrowId">
+            
+            <div style="margin:15px 0;">
+                <label><b>Physical Condition:</b></label><br>
+                <select name="fine_type" id="returnCondition" onchange="toggleSeverity()" style="width:100%; padding:8px;" required>
+                    <option value="NORMAL">Normal / Good Condition</option>
+                    <option value="DAMAGED">Damaged (Requires Repair)</option>
+                    <option value="LOST">Lost (Total Loss)</option>
+                </select>
+            </div>
+
+            <!-- Severity selection only appears for Damaged books -->
+            <div id="severityContainer" style="display:none; margin:15px 0;">
+                <label><b>Damage Severity:</b></label><br>
+                <select name="severity" style="width:100%; padding:8px;">
+                    <option value="1.0">Minor (Scratches/Tears)</option>
+                    <option value="1.5">Moderate (Binding issues)</option>
+                    <option value="2.0">Severe (Water/Liquid damage)</option>
+                </select>
+            </div>
+
+            <div style="margin:15px 0;">
+                <label><b>Total Final Fine (₱):</b></label><br>
+                <input type="number" step="0.01" name="final_amount" value="0.00" style="width:100%; padding:8px;" required>
+                <small style="color:#64748b;">Include late fees and physical penalties.</small>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button type="button" onclick="closeReturnModal()" style="padding:8px 16px;">Cancel</button>
+                <button type="submit" style="padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:4px;">Complete Transaction</button>
+            </div>
+        </form>
+    </div>
+</div>
+
             <div id="overdueSection" class="details-section hidden">
                 <h3 style="margin-bottom: 20px;"><i class="fi fi-rr-exclamation" style="color:#ef4444"></i> Overdue
                     Items</h3>
