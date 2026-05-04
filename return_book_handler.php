@@ -45,6 +45,12 @@ $stmt2->bind_param("i", $borrow_id);
 $stmt2->execute();
 $stmt2->close();
 
+// Clear the fine balance when book is returned
+$stmt_fine = $conn->prepare("UPDATE fine SET balance = 0, amount_paid = total_amount_accrued WHERE Book_Transaction_borrow_id = ?");
+$stmt_fine->bind_param("i", $borrow_id);
+$stmt_fine->execute();
+$stmt_fine->close();
+
 // 3. Mark the book copy as Available
 $stmt3 = $conn->prepare("UPDATE book_copy SET status = 'Available' WHERE copy_id = ?");
 $stmt3->bind_param("i", $copy_id);
