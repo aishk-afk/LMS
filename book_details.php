@@ -5,6 +5,7 @@ $role = $_SESSION['user_role'] ?? 'member';
 $is_admin = (strtolower($role) === 'admin');
 // 1. Database Connection & Logic
 include 'db_config.php';
+require_once 'fine_calculator';
 
 // Get the ID from URL and sanitize it
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -32,6 +33,17 @@ $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $id);
 $stmt->execute();
 $row = $stmt->get_result()->fetch_assoc();
+
+$bookPrice = $row['price'] ?? 0;
+$dailyFineRate = getTieredFineRate($bookPrice);
+$baseDamageFee = getTieredRepairFee($bookPrice);
+
+// Calculate damage tiers for display
+$lowDamage = $baseDamageFee;
+$standardDamage = $baseDamageFee * 1.5; // 1.5x
+$severeDamage = $baseDamageFee * 2.0; // 2.0x
+
+$totalLostFee = ($bookPrice * 1.10) + 200.00;
 
 if (!$row) {
     die("Book not found in the library database.");
@@ -232,6 +244,43 @@ if (!$row) {
                 </div>
             </div>
         </div>
+
+                <div class="fine-policy-card">
+                    <div class="fine-header">
+                        <i class="fi fi-rr-info"></i> Borrowing & Damage Policy
+                    </div>
+
+                    <div class="fine-grid">
+                        <div class="fine-box overdue-box">
+                            <small>Late Fee (Per Day)</small>
+                            <div>₱<?php echo number_format($dailyFineRate, 2); ?></div>
+                        </div>
+                        <div class="fine-box lost-box">
+                            <small>Replacement (If Lost)</small>
+                            <div>₱<?php echo number_format($totalLostFee, 2); ?></div>
+                        </div>
+                    </div>
+
+                    <div style="font-weight:700; font-size:0.75rem; color:#64748b; margin-bottom:8px; text-transform:uppercase;">Estimated Damage Costs</div>
+                    <table class="damage-table">
+                        <tr>
+                            <td style="color:#475569;">Low Damage (Minor tears/stains)</td>
+                            <td style="text-align:right; font-weight:700;">₱<?php echo number_format($lowDamage, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td style="color:#475569;">Standard Damage (Broken spine/markings)</td>
+                            <td style="text-align:right; font-weight:700;">₱<?php echo number_format($standardDamage, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td style="color:#475569;">Severe Damage (Water dmg/missing pages)</td>
+                            <td style="text-align:right; font-weight:700; color:#ef4444;">₱<?php echo number_format($severeDamage, 2); ?></td>
+                        </tr>
+                    </table>
+
+                    <p style="font-size:0.65rem; color:#94a3b8; margin-top:10px;">
+                        * Final assessment is conducted by library staff upon return. Overdue fines are capped at 25% of book value.[cite: 2]
+                    </p>
+                </div>   
     </div>
 
 </body>
