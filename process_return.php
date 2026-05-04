@@ -1,73 +1,75 @@
 <?php
 require_once 'db_config.php';
-require_once 'fine_calculator.php';
+require_once 'fine_calculator.php'; // Ensure this matches your calculator filename
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $trs_id = filter_var($_POST['trs_id'], FILTER_VALIDATE_INT);
-    $condition = $_POST['fine_type']; 
+    $borrow_id = filter_var($_POST['borrow_id'], FILTER_VALIDATE_INT);
+    $condition = $_POST['fine_type']; // Expected 'NORMAL', 'DAMAGED', or 'LOST'
     $admin_final_amount = filter_var($_POST['final_amount'], FILTER_VALIDATE_FLOAT);
 
-    if (!$trs_id) {
-        die("Error: Missing or invalid Transaction ID.");
-    }
-
-    $conn->begin_transaction();
+    $conn->begin_transaction(); // Start atomic operation
 
     try {
-        $query = "SELECT bt.*, b.price, b.fine_per_day, s.is_graduating, s.user_type 
-                  FROM book_transactions bt 
-                  JOIN books b ON bt.book_id = b.book_id 
-                  JOIN students s ON bt.student_id = s.student_id 
-                  WHERE bt.trs_id = ?";
+        // Fetch detailed record to link the Copy, Price, and User[cite: 4]
+        $query = "SELECT bt.*, b.price, m.user_id, bt.Book_Copy_copy_id 
+                  FROM book_transaction bt 
+                  JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id
+                  JOIN book b ON bc.Book_book_id = b.book_id 
+                  JOIN member m ON bt.Member_user_id = m.user_id 
+                  WHERE bt.borrow_id = ?";
         
         $stmt = $conn->prepare($query);
-        $stmt->bind_param("i", $trs_id);
+        $stmt->bind_param("i", $borrow_id);
         $stmt->execute();
         $data = $stmt->get_result()->fetch_assoc();
 
-        if (!$data) {
-            throw new Exception("Transaction record not found.");
+        if (!$data) { throw new Exception("Transaction record not found."); }
+
+        // 1. UPDATE TRANSACTION: Mark as returned[cite: 4]
+        $updateBt = "UPDATE book_transaction SET return_date = NOW(), status = 'Returned' WHERE borrow_id = ?";
+        $stmtBt = $conn->prepare($updateBt);
+        $stmtBt->bind_param("i", $borrow_id);
+        $stmtBt->execute();
+
+        // 2. UPDATE BOOK COPY STATUS: Change based on condition[cite: 4]
+        // If LOST, copy stays 'Lost'. If DAMAGED, set to 'Under Repair'. Otherwise, 'Available'.
+        $newStatus = 'Available';
+        if ($condition === 'LOST') {
+            $newStatus = 'Lost';
+        } elseif ($condition === 'DAMAGED') {
+            $newStatus = 'Under Repair';
         }
 
-        // Calculate Days Late
-        $dueDate = new DateTime($data['due_date']);
-        $today = new DateTime();
-        $daysLate = ($today > $dueDate) ? $dueDate->diff($today)->days : 0;
+        $updateCopy = "UPDATE book_copy SET status = ? WHERE copy_id = ?";
+        $stmtCopy = $conn->prepare($updateCopy);
+        $stmtCopy->bind_param("si", $newStatus, $data['Book_Copy_copy_id']);
+        $stmtCopy->execute();
 
-        // FIXED: The variables now match the Calculator's new header exactly
-        $calc = getCalibratedFine(
-            $data['price'], 
-            $data['fine_per_day'], 
-            $daysLate, 
-            $condition, 
-            $data['is_graduating'], 
-            $data['user_type']
-        );
-
-        if (isset($calc['error'])) {
-            throw new Exception($calc['error']);
-        }
-
-        // Update Transaction
-        $updateTrs = "UPDATE book_transactions SET return_date = NOW(), status = 'RETURNED' WHERE trs_id = ?";
-        $stmtTrs = $conn->prepare($updateTrs);
-        $stmtTrs->bind_param("i", $trs_id);
-        $stmtTrs->execute();
-
-        // Insert Fine
+        // 3. RECORD FINE: Apply tiered rate logic[cite: 4]
         if ($admin_final_amount > 0) {
-            $insertFine = "INSERT INTO fines (overdue_date, fine_amount, days_overdue, trs_id, fine_type, payment_status, book_resolution) 
-                           VALUES (?, ?, ?, ?, ?, 'UNPAID', 'PENDING')";
+            $insertFine = "INSERT INTO fine (fine_rate, Book_Transaction_borrow_id, total_amount_accrued, balance, overdue_date, overdue_days, Member_user_id) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?)";
+            
+            // Note: overdue_days can be calculated using DATEDIFF between NOW() and $data['due_date'][cite: 4]
             $stmtFine = $conn->prepare($insertFine);
-            $stmtFine->bind_param("sdis s", $data['due_date'], $admin_final_amount, $daysLate, $trs_id, $condition);
+            $stmtFine->bind_param("diididi", 
+                getTieredFineRate($data['price']), // Dynamic tiered rate[cite: 4]
+                $borrow_id, 
+                $admin_final_amount, 
+                $admin_final_amount, 
+                $data['due_date'], 
+                0, 
+                $data['user_id']
+            );
             $stmtFine->execute();
         }
 
-        $conn->commit();
-        echo "Success: Return processed. Amount: ₱" . number_format($admin_final_amount, 2);
+        $conn->commit(); // Save all changes[cite: 4]
+        echo "Success: Book copy is now " . $newStatus . ". Fine: ₱" . number_format($admin_final_amount, 2);
 
     } catch (Exception $e) {
-        $conn->rollback();
+        $conn->rollback(); // Undo everything if one step fails[cite: 4]
         echo "Process Failed: " . $e->getMessage();
     }
 }
+?>
