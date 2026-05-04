@@ -214,7 +214,7 @@ if (!$result) {
                     </li>
                     <li class="nav-item"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a></li>
                     <li class="nav-item"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
-                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a>
+                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Fine Settings</a>
                     </li>
                 </ul>
             </nav>
