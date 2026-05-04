@@ -5,7 +5,7 @@ $role = $_SESSION['user_role'] ?? 'member';
 $is_admin = (strtolower($role) === 'admin');
 // 1. Database Connection & Logic
 include 'db_config.php';
-require_once 'fine_calculator';
+require_once 'fine_calculator.php';
 
 // Get the ID from URL and sanitize it
 $id = isset($_GET['id']) ? intval($_GET['id']) : 0;

@@ -35,9 +35,10 @@ if ($type === 'activeBorrows') {
 }
 
 // Get overdue items count
+// Get overdue items count — replace the existing overdueItems block
 if ($type === 'overdueItems') {
     $sql = "SELECT COUNT(*) as count FROM book_transaction 
-            WHERE status = 'Overdue'";
+            WHERE status = 'Active' AND due_date < CURDATE()";
     $result = mysqli_query($conn, $sql);
     $data = mysqli_fetch_assoc($result);
     echo json_encode(['count' => intval($data['count'] ?? 0)]);
@@ -231,7 +232,7 @@ if ($type === 'overdueDetails') {
             INNER JOIN member m ON bt.Member_user_id = m.user_id
             LEFT JOIN user u ON m.user_id = u.user_id
             LEFT JOIN fine f ON bt.borrow_id = f.Book_Transaction_borrow_id
-            WHERE bt.status = 'Overdue'
+            WHERE bt.status = 'Active' AND bt.due_date < CURATE()
             ORDER BY bt.due_date ASC
             LIMIT 10";
     $data = executeQuery($conn, $sql);
