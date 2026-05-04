@@ -571,7 +571,16 @@
     gap: 18px;
     align-items: center;
     box-shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
+    transition: background 0.3;
 }
+.member-card:hover {
+    background: #f8fafc;
+}
+.text-danger { 
+    color: #b91c1c; 
+    font-weight: bold;
+}
+
 
 .member-main {
     display: flex;
@@ -593,6 +602,15 @@
     text-transform: uppercase;
 }
 
+.member-book-info span, member-due-date span, .member-fine span {
+    display:block;
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+}
+.expand-btn {
+    transition: transform 0.3s ease;
+}
 .member-info h3 {
     margin: 0;
     font-size: 1rem;
