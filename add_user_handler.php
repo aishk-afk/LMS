@@ -7,13 +7,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$full_name  = trim($_POST['full_name'] ?? '');
-$email      = trim($_POST['email'] ?? '');
-$password   = $_POST['password'] ?? '';
-$role       = $_POST['role'] ?? 'Student';       // 'Student' or 'Faculty'
+$full_name = trim($_POST['full_name'] ?? '');
+$email = trim($_POST['email'] ?? '');
+$password = $_POST['password'] ?? '';
+$role = $_POST['role'] ?? 'Student';       // 'Student' or 'Faculty'
 $department = trim($_POST['department'] ?? '');
-$course     = trim($_POST['course'] ?? '');
-$section    = trim($_POST['section'] ?? '');
+$course = trim($_POST['course'] ?? '');
+$section = trim($_POST['section'] ?? '');
 
 // --- Validation ---
 if (!$full_name || !$email || !$password || !$department) {
@@ -40,10 +40,10 @@ $check->close();
 // Split full name into first and last
 $name_parts = explode(' ', $full_name, 2);
 $first_name = $name_parts[0];
-$last_name  = $name_parts[1] ?? '';
+$last_name = $name_parts[1] ?? '';
 
 // Hash the password
-$hashed_password = password_hash($password, PASSWORD_BCRYPT);
+$hashed_password = hash('sha256', $password);
 
 // --- Insert into user table ---
 $stmt = $conn->prepare("INSERT INTO user (first_name, last_name, email, password, user_type) VALUES (?, ?, ?, ?, 'Member')");
@@ -60,7 +60,11 @@ $stmt->close();
 // --- Insert into member table ---
 $stmt2 = $conn->prepare("INSERT INTO member (user_id, Department, Course, Section, Member_Role) VALUES (?, ?, ?, ?, ?)");
 $stmt2->bind_param("issss", $new_user_id, $department, $course, $section, $role);
-
+$allowed_depts = ['CCS', 'CAS', 'CAMP', 'CON', 'CED', 'CCJE', 'CEA'];
+if (!in_array($department, $allowed_depts)) {
+    echo json_encode(['success' => false, 'message' => 'Invalid department selected.']);
+    exit;
+}
 if (!$stmt2->execute()) {
     // Rollback user if member insert fails
     $conn->query("DELETE FROM user WHERE user_id = $new_user_id");
