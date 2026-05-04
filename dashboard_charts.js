@@ -23,19 +23,19 @@ async function updateStatistics(startDate, endDate) {
     try {
         // Active Borrows
         const activeBorrows = await fetchDashboardData('activeBorrows', startDate, endDate);
-        document.querySelector('.stat-card:nth-child(1) h3').textContent = activeBorrows.count || 0;
+       document.getElementById('statActiveBorrows').textContent = activeBorrows.count || 0;
 
         // Overdue Items
         const overdueItems = await fetchDashboardData('overdueItems', startDate, endDate);
-        document.querySelector('.stat-card:nth-child(2) h3').textContent = overdueItems.count || 0;
+        document.getElementById('statOverdueItems').textContent = overdueItems.count || 0;
 
         // Total Books
         const totalBooks = await fetchDashboardData('totalBooks', startDate, endDate);
-        document.querySelector('.stat-card:nth-child(3) h3').textContent = totalBooks.count || 0;
+        document.getElementById('statTotalBooks').textContent = totalBooks.count || 0;
 
         // Fines Collected
         const finesCollected = await fetchDashboardData('finesCollected', startDate, endDate);
-        document.querySelector('.stat-card:nth-child(4) h3').textContent = '₱' + finesCollected.total || 0;
+        document.getElementById('statFinesCollected').textContent = '₱' + (finesCollected.total || 0);
     } catch (error) {
         console.error('Error updating statistics:', error);
     }
@@ -45,7 +45,7 @@ async function updateStatistics(startDate, endDate) {
 async function updateFineSummary() {
     try {
         const fineSummary = await fetchDashboardData('fineSummary', '', '');
-        const summaryElement = document.querySelector('.dashboard-row.single .card small');
+        const summaryElement = document.getElementById('fineSummaryText');
         if (summaryElement) {
             summaryElement.textContent = `Collected: ₱${fineSummary.collected || 0} · Pending: ₱${fineSummary.pending || 0} · Total: ₱${fineSummary.total || 0}`;
         }
@@ -174,14 +174,24 @@ async function updateTopBorrowers(startDate, endDate) {
             return;
         }
 
-        data.slice(0, 5).forEach(row => {
+        data.slice(0, 5).forEach((row, index) => {
             const div = document.createElement('div');
             div.className = 'borrower-item';
             div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9;';
-            
-            const borrowerName = row.borrower_name || row.user_id || 'Unknown';
+
+            const borrowerName = row.borrower_name || 'Unknown';
+            const course = row.course || '—';
+            const medals = ['🥇','🥈','🥉'];
+            const rank = medals[index] || `#${index + 1}`;
+
             div.innerHTML = `
-                <div><strong>${borrowerName}</strong></div>
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="font-size:20px; width:28px; text-align:center;">${rank}</div>
+                    <div>
+                        <strong>${borrowerName}</strong>
+                        <br><small style="color:#64748b;">${course}</small>
+                    </div>
+                </div>
                 <span style="font-weight:600; color:#3b82f6;">${row.borrow_count}x</span>
             `;
             container.appendChild(div);
@@ -266,28 +276,77 @@ function initializeGenreChart() {
 
 function initializeMaterialsChart() {
     const ctxBar = document.getElementById('materialsChart').getContext('2d');
+
+    const BAR_COLORS = [
+        '#1e3a8a','#1d4ed8','#3b82f6','#60a5fa','#93c5fd',
+        '#a855f7','#ec4899','#f97316','#22c55e','#14b8a6'
+    ];
+
     charts.materials = new Chart(ctxBar, {
         type: 'bar',
         data: {
             labels: [],
             datasets: [{
-                label: 'Items',
+                label: 'Books',
                 data: [],
-                backgroundColor: '#4299e1',
-                borderRadius: 5
+                backgroundColor: [],
+                borderRadius: 4,
+                borderSkipped: false,
             }]
         },
-        options: { 
-            indexAxis: 'y', 
+        options: {
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${ctx.raw} book${ctx.raw !== 1 ? 's' : ''}`
+                    }
+                }
+            },
             scales: {
                 x: {
-                    beginAtZero: true
-                }
+                    beginAtZero: true,
+                    ticks: { stepSize: 1 },
+                    grid: { color: '#f1f5f9' }
+                },
+                y: { grid: { display: false } }
             }
         }
     });
+
+    loadMaterialsChart();
+}
+
+async function loadMaterialsChart() {
+    const BAR_COLORS = [
+        '#1e3a8a','#1d4ed8','#3b82f6','#60a5fa','#93c5fd',
+        '#a855f7','#ec4899','#f97316','#22c55e','#14b8a6'
+    ];
+
+    try {
+        const data = await fetchDashboardData('materialsAdded', '', '');
+
+        if (!charts.materials) return;
+
+        const labels = data.map(d => d.label);
+        const values = data.map(d => d.value || 0);
+        const colors = labels.map((_, i) => BAR_COLORS[i % BAR_COLORS.length]);
+
+        charts.materials.data.labels = labels;
+        charts.materials.data.datasets[0].data = values;
+        charts.materials.data.datasets[0].backgroundColor = colors;
+        charts.materials.update();
+
+        const total = values.reduce((a, b) => Number(a) + Number(b), 0);
+        const subtitle = document.getElementById('materialsTotal');
+        if (subtitle) subtitle.textContent = `${total} total items`;
+
+    } catch (err) {
+        console.error('Error loading materials chart:', err);
+    }
 }
 
 function initializeFinesChart() {
@@ -359,15 +418,7 @@ async function refreshCharts(period, dateRange) {
     }
     
     // Update materials chart
-    const materialsData = await fetchDashboardData('materialsAdded', start, end, period);
-    if (charts.materials) {
-        const labels = materialsData.length > 0 ? materialsData.map(d => d.label) : [];
-        const values = materialsData.length > 0 ? materialsData.map(d => d.value || 0) : [];
-        
-        charts.materials.data.labels = labels;
-        charts.materials.data.datasets[0].data = values;
-        charts.materials.update();
-    }
+    await loadMaterialsChart();
     
     // Update fines chart
     const finesData = await fetchDashboardData('fineSummary', start, end, period);

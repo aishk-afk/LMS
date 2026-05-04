@@ -237,27 +237,27 @@ include 'db_config.php';
                 <div class="stat-card" onclick="toggleDetails('activeSection', 'arrow1')" style="cursor: pointer;">
                     <div class="stat-icon icon-blue"><i class="fi fi-rr-book-alt"></i></div>
                     <div class="stat-info"><span>Active Borrows</span>
-                        <h3>2</h3>
+                        <h3 id="statActiveBorrows">—</h3>
                     </div>
                     <i class="fi fi-rr-angle-small-down dropdown-arrow" id="arrow1"></i>
                 </div>
                 <div class="stat-card" onclick="toggleDetails('overdueSection', 'arrow2')" style="cursor: pointer;">
                     <div class="stat-icon icon-red"><i class="fi fi-rr-exclamation"></i></div>
                     <div class="stat-info"><span>Overdue Items</span>
-                        <h3 class="text-red">2</h3>
+                        <h3 class="text-red" id="statOverdueItems">—</h3>
                     </div>
                     <i class="fi fi-rr-angle-small-down dropdown-arrow" id="arrow2"></i>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon icon-green"><i class="fi fi-rr-book"></i></div>
                     <div class="stat-info"><span>Total Books</span>
-                        <h3>14</h3>
+                        <h3 id="statTotalBooks">—</h3>
                     </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon icon-purple"><i class="fi fi-rr-credit-card"></i></div>
                     <div class="stat-info"><span>Fines Collected</span>
-                        <h3>₱1044</h3>
+                        <h3 id="statFinesCollected">—</h3>
                     </div>
                 </div>
             </div>
@@ -358,7 +358,10 @@ include 'db_config.php';
                     </div>
                 </div>
                 <div class="card">
-                    <h3>Materials Added by Genre</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <h3 style="margin:0;">Materials Added by Genre</h3>
+                        <small id="materialsTotal" style="color:#64748b;">0 total items</small>
+                    </div>
                     <div class="chart-wrapper chart-wrapper--small">
                         <canvas id="materialsChart"></canvas>
                     </div>
@@ -369,7 +372,7 @@ include 'db_config.php';
                 <div class="card">
                     <div style="margin-bottom: 20px;">
                         <h3 style="margin:0;">Fine Summary</h3>
-                        <small style="color:#64748b;">Collected: ₱440 · Pending: ₱627 · Total: ₱1067</small>
+                        <small style="color:#64748b;" id="fineSummaryText">Collected: ₱0 · Pending: ₱0 · Total: ₱0</small>
                     </div>
                     <div class="chart-wrapper chart-wrapper--small">
                         <canvas id="finesChart"></canvas>
@@ -461,25 +464,35 @@ include 'db_config.php';
             indicator.textContent = text;
         }
 
-        function getDateRange() {
+function getDateRange() {
             let startDate, endDate;
+            const today = new Date(currentDate);
 
             if (currentPeriod === 'week') {
-                startDate = new Date(currentDate);
-                startDate.setDate(currentDate.getDate() - currentDate.getDay());
+                const day = today.getDay();
+                const diffToMonday = (day === 0) ? -6 : 1 - day;
+                startDate = new Date(today);
+                startDate.setDate(today.getDate() + diffToMonday);
                 endDate = new Date(startDate);
                 endDate.setDate(startDate.getDate() + 6);
             } else if (currentPeriod === 'month') {
-                startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-                endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
             } else if (currentPeriod === 'year') {
-                startDate = new Date(currentDate.getFullYear(), 0, 1);
-                endDate = new Date(currentDate.getFullYear(), 11, 31);
+                startDate = new Date(today.getFullYear(), 0, 1);
+                endDate = new Date(today.getFullYear(), 11, 31);
+            }
+
+            function toLocalDate(d) {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${yyyy}-${mm}-${dd}`;
             }
 
             return {
-                start: startDate.toISOString().split('T')[0],
-                end: endDate.toISOString().split('T')[0]
+                start: toLocalDate(startDate),
+                end: toLocalDate(endDate)
             };
         }
 
