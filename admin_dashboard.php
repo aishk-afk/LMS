@@ -1,7 +1,27 @@
 <?php
 session_start();
 // If you have database includes, they go here
-include 'db_config.php'; 
+include 'db_config.php';
+
+// Fetch Active Borrows (Not yet returned)
+// Fetch Active Borrows (Status is 'Active')
+$active_query = "SELECT bt.borrow_id, b.title, u.first_name, u.last_name, bt.borrow_date, bt.due_date 
+                 FROM book_transaction bt
+                 JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id
+                 JOIN book b ON bc.Book_book_id = b.book_id
+                 JOIN user u ON bt.Member_user_id = u.user_id
+                 WHERE bt.status = 'Active'";
+$active_result = mysqli_query($conn, $active_query);
+
+// Fetch Overdue Items (Status is 'Overdue' or logic-based check)
+$overdue_query = "SELECT bt.borrow_id, b.title, u.first_name, u.last_name, bt.due_date, f.total_amount_accrued 
+                  FROM book_transaction bt
+                  JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id
+                  JOIN book b ON bc.Book_book_id = b.book_id
+                  JOIN user u ON bt.Member_user_id = u.user_id
+                  LEFT JOIN fine f ON bt.borrow_id = f.Book_Transaction_borrow_id
+                  WHERE bt.status = 'Overdue' OR (bt.status = 'Active' AND bt.due_date < CURDATE())";
+$overdue_result = mysqli_query($conn, $overdue_query);
 ?>
 
 <!DOCTYPE html>
@@ -159,6 +179,19 @@ include 'db_config.php';
             border-radius: 16px;
             border: 1px solid #f1f5f9;
         }
+
+        #returnBookModal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            /* Higher than your sidebar and charts */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            /* Semi-transparent background */
+        }
     </style>
 </head>
 
@@ -276,66 +309,33 @@ include 'db_config.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                <div style="display:flex; align-items:center; gap:12px;">
-                                    <div class="book-img-holder"><img src="book1.jpg"></div>Pride and Prejudice
-                                </div>
-                            </td>
-                            <td>Jane Doe</td>
-                            <td>Mar 10, 2026</td>
-                            <td>Mar 15, 2026</td>
-                            <td>
-                                <button class="btn-return"
-                                    onclick="openReturnModal(<?php echo $row['borrow_id']; ?>, '<?php echo htmlspecialchars($row['title']); ?>')">
-                                    Return
-                                </button>
-                            </td>
-                        </tr>
+                        <?php if (mysqli_num_rows($active_result) > 0): ?>
+                            <?php while ($row = mysqli_fetch_assoc($active_result)): ?>
+                                <tr>
+                                    <td>
+                                        <div style="display:flex; align-items:center; gap:12px;">
+                                            <div class="book-img-holder"><img src="book_placeholder.jpg"></div>
+                                            <?php echo htmlspecialchars($row['title']); ?>
+                                        </div>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($row['first_name'] . ' ' . $row['last_name']); ?></td>
+                                    <td><?php echo date('M d, Y', strtotime($row['borrow_date'])); ?></td>
+                                    <td><?php echo date('M d, Y', strtotime($row['due_date'])); ?></td>
+                                    <td>
+                                        <button class="btn-return" onclick="openReturnModal(<?php echo $row['borrow_id']; ?>, '<?php echo addslashes($row['title']); ?>')">
+                                            Return
+                                        </button>
+                                    </td>
+                                </tr>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <tr>
+                                <td colspan="5" style="text-align:center;">No active borrows found.</td>
+                            </tr>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
-
-            <!-- Enhanced Return Assessment Modal -->
-<div id="returnBookModal" class="modal" style="display:none; position:fixed; z-index:100; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
-    <div class="modal-content" style="background:white; margin:10% auto; padding:20px; border-radius:12px; width:400px;">
-        <h3>Assess Return: <span id="returnBookTitle"></span></h3>
-        <hr>
-        <form action="process_return.php" method="POST">
-            <input type="hidden" name="borrow_id" id="returnBorrowId">
-            
-            <div style="margin:15px 0;">
-                <label><b>Physical Condition:</b></label><br>
-                <select name="fine_type" id="returnCondition" onchange="toggleSeverity()" style="width:100%; padding:8px;" required>
-                    <option value="NORMAL">Normal / Good Condition</option>
-                    <option value="DAMAGED">Damaged (Requires Repair)</option>
-                    <option value="LOST">Lost (Total Loss)</option>
-                </select>
-            </div>
-
-            <!-- Severity selection only appears for Damaged books -->
-            <div id="severityContainer" style="display:none; margin:15px 0;">
-                <label><b>Damage Severity:</b></label><br>
-                <select name="severity" style="width:100%; padding:8px;">
-                    <option value="1.0">Minor (Scratches/Tears)</option>
-                    <option value="1.5">Moderate (Binding issues)</option>
-                    <option value="2.0">Severe (Water/Liquid damage)</option>
-                </select>
-            </div>
-
-            <div style="margin:15px 0;">
-                <label><b>Total Final Fine (₱):</b></label><br>
-                <input type="number" step="0.01" name="final_amount" value="0.00" style="width:100%; padding:8px;" required>
-                <small style="color:#64748b;">Include late fees and physical penalties.</small>
-            </div>
-
-            <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button type="button" onclick="closeReturnModal()" style="padding:8px 16px;">Cancel</button>
-                <button type="submit" style="padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:4px;">Complete Transaction</button>
-            </div>
-        </form>
-    </div>
-</div>
 
             <div id="overdueSection" class="details-section hidden">
                 <h3 style="margin-bottom: 20px;"><i class="fi fi-rr-exclamation" style="color:#ef4444"></i> Overdue
@@ -493,10 +493,17 @@ include 'db_config.php';
                 const weekEnd = new Date(weekStart);
                 weekEnd.setDate(weekStart.getDate() + 6);
 
-                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                const options = {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                };
                 text = `Week of ${weekStart.toLocaleDateString('en-US', options)} - ${weekEnd.toLocaleDateString('en-US', options)}`;
             } else if (currentPeriod === 'month') {
-                const options = { month: 'long', year: 'numeric' };
+                const options = {
+                    month: 'long',
+                    year: 'numeric'
+                };
                 text = `${currentDate.toLocaleDateString('en-US', options)}`;
             } else if (currentPeriod === 'year') {
                 text = `Year ${currentDate.getFullYear()}`;
@@ -505,7 +512,7 @@ include 'db_config.php';
             indicator.textContent = text;
         }
 
-function getDateRange() {
+        function getDateRange() {
             let startDate, endDate;
             const today = new Date(currentDate);
 
@@ -544,26 +551,51 @@ function getDateRange() {
             }
         }
 
-        // Add these functions to the existing script block in admin_dashboard.php
         function openReturnModal(borrowId, title) {
-            document.getElementById('returnBorrowId').value = borrowId;
-            document.getElementById('returnBookTitle').innerText = title;
-            document.getElementById('returnBookModal').classList.add('active');
+            // 1. Get the elements by their IDs
+            const modal = document.getElementById('returnBookModal');
+            const inputId = document.getElementById('returnBorrowId');
+            const textTitle = document.getElementById('returnBookTitle');
+
+            // 2. Check if they exist to prevent the "nothing happens" bug
+            if (modal && inputId && textTitle) {
+                inputId.value = borrowId; // Passes the ID to the hidden form
+                textTitle.innerText = title; // Displays the book name
+                modal.style.display = 'block'; // Shows the actual HTML Modal
+            } else {
+                // If this runs, it means your HTML Modal code is missing the IDs!
+                console.error("Critical Error: Modal IDs not found in the HTML.");
+                alert("System Error: Modal UI not initialized.");
+            }
         }
 
         function closeReturnModal() {
-            document.getElementById('returnBookModal').classList.remove('active');
+            document.getElementById('returnBookModal').style.display = 'none';
+
+        }
+
+        // Close the modal if the admin clicks outside of the box
+        window.onclick = function(event) {
+            const modal = document.getElementById('returnBookModal');
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
         }
 
         function toggleSeverity() {
             const condition = document.getElementById('returnCondition').value;
             const container = document.getElementById('severityContainer');
-            // Tiered logic: Severity only matters if damaged[cite: 2]
-            container.style.display = (condition === 'DAMAGED') ? 'block' : 'none';
+
+            // Only show severity options if the status is 'DAMAGED'
+            if (condition === 'DAMAGED') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
         }
 
         // Handle direct date input change
-        document.getElementById('dateInput').addEventListener('change', function () {
+        document.getElementById('dateInput').addEventListener('change', function() {
             const newDate = new Date(this.value);
             if (!isNaN(newDate.getTime())) {
                 currentDate = newDate;
@@ -573,7 +605,7 @@ function getDateRange() {
         });
 
         // Initialize on page load
-        window.addEventListener('load', function () {
+        window.addEventListener('load', function() {
             updatePeriodIndicator();
             updateDateInput();
             updateAllCharts();
