@@ -20,6 +20,7 @@ if (!$result) {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,14 +39,24 @@ if (!$result) {
             cursor: pointer;
             border-bottom: 1px solid #eee;
         }
-        .member-book-info span, .member-due-date span, .member-fine span {
+
+        .member-book-info span,
+        .member-due-date span,
+        .member-fine span {
             display: block;
             font-size: 10px;
             color: #888;
             text-transform: uppercase;
         }
-        .text-danger { color: #e74c3c; font-weight: bold; }
-        .expand-btn { transition: transform 0.3s; }
+
+        .text-danger {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .expand-btn {
+            transition: transform 0.3s;
+        }
     </style>
 </head>
 
@@ -60,9 +71,11 @@ if (!$result) {
                 <ul>
                     <li class="nav-item"><a href="admin_dashboard.php"><i class="fi fi-rr-home"></i> Dashboard</a></li>
                     <li class="nav-item"><a href="admin_catalog.php"><i class="fi fi-rr-search"></i> Catalog</a></li>
-                    <li class="nav-item active"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a></li>
+                    <li class="nav-item active"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a>
+                    </li>
                     <li class="nav-item"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
-                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a></li>
+                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a>
+                    </li>
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -96,81 +109,94 @@ if (!$result) {
             </section>
 
             <section class="members-list">
-                <?php while ($row = $result->fetch_assoc()): 
+                <?php while ($row = $result->fetch_assoc()):
                     $uid = $row['user_id'];
                     $name = htmlspecialchars($row['first_name'] . ' ' . $row['last_name']);
-                    
+
                     // 2. Sub-query for multiple active borrows
-                    $b_sql = "SELECT bt.*, b.title FROM book_transaction bt 
-                              JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id 
-                              JOIN book b ON bc.Book_book_id = b.book_id 
-                              WHERE bt.Member_user_id = $uid AND bt.status != 'Returned'";
+                    $b_sql = "SELECT bt.*, b.title 
+                    FROM book_transaction bt 
+                    JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id 
+                    JOIN book b ON bc.Book_book_id = b.book_id 
+                    WHERE bt.Member_user_id = $uid AND bt.status != 'Returned'";
                     $b_res = $conn->query($b_sql);
-                    $b_count = $b_res->num_rows;
-                    
+                    if (!$b_res) {
+                        echo "SQL Error: " . $conn->error;
+                    }
+                    $b_count = ($b_res) ? $b_res->num_rows : 0;
+                    $fine = number_format($row['total_fine'] ?? 0, 2);
+
                     // Fine logic
                     $fine = number_format($row['total_fine'] ?? 0, 2);
-                ?>
-                <div class="member-card-wrapper" style="border: 1px solid #eee; margin-bottom: 10px; border-radius: 8px;">
-                    <div class="member-card" onclick="toggleDetails(this)">
-                        <div class="member-main-info" style="display:flex; align-items:center; gap:10px;">
-                            <div class="member-avatar" style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#4f46e5;">
-                                <?php echo strtoupper($row['first_name'][0]); ?>
+                    ?>
+                    <div class="member-card-wrapper"
+                        style="border: 1px solid #eee; margin-bottom: 10px; border-radius: 8px;">
+                        <div class="member-card" onclick="toggleDetails(this)">
+                            <div class="member-main-info" style="display:flex; align-items:center; gap:10px;">
+                                <div class="member-avatar"
+                                    style="width:40px; height:40px; background:#eef2ff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; color:#4f46e5;">
+                                    <?php echo strtoupper($row['first_name'][0]); ?>
+                                </div>
+                                <div class="member-details">
+                                    <h4 style="margin:0; font-size:14px;"><?php echo $name; ?></h4>
+                                    <p style="margin:0; font-size:12px; color:#666;"><?php echo $row['email']; ?></p>
+                                </div>
                             </div>
-                            <div class="member-details">
-                                <h4 style="margin:0; font-size:14px;"><?php echo $name; ?></h4>
-                                <p style="margin:0; font-size:12px; color:#666;"><?php echo $row['email']; ?></p>
+
+                            <div class="member-book-info">
+                                <span>Currently Borrowed</span>
+                                <strong><?php echo ($b_count > 0) ? ($b_count == 1 ? "1 Book" : "$b_count Books") : "None"; ?></strong>
+                            </div>
+
+                            <div class="member-due-date">
+                                <span>Status</span>
+                                <strong><?php echo ($b_count > 0) ? "Active Loan" : "Clear"; ?></strong>
+                            </div>
+
+                            <div class="member-fine">
+                                <span>Fine Balance</span>
+                                <strong
+                                    class="<?php echo ($fine > 0) ? 'text-danger' : ''; ?>">₱<?php echo $fine; ?></strong>
+                            </div>
+
+                            <div class="member-stats" style="text-align:right;">
+                                <i class="fi fi-rr-angle-small-down expand-btn"></i>
                             </div>
                         </div>
 
-                        <div class="member-book-info">
-                            <span>Currently Borrowed</span>
-                            <strong><?php echo ($b_count > 0) ? ($b_count == 1 ? "1 Book" : "$b_count Books") : "None"; ?></strong>
-                        </div>
-
-                        <div class="member-due-date">
-                            <span>Status</span>
-                            <strong><?php echo ($b_count > 0) ? "Active Loan" : "Clear"; ?></strong>
-                        </div>
-
-                        <div class="member-fine">
-                            <span>Fine Balance</span>
-                            <strong class="<?php echo ($fine > 0) ? 'text-danger' : ''; ?>">₱<?php echo $fine; ?></strong>
-                        </div>
-
-                        <div class="member-stats" style="text-align:right;">
-                            <i class="fi fi-rr-angle-small-down expand-btn"></i>
+                        <div class="member-expanded-details"
+                            style="display:none; padding: 20px; background:#fcfcfc; border-top: 1px solid #eee;">
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                <div>
+                                    <h5 style="margin-bottom:10px; color:#888;">BORROWED ITEMS</h5>
+                                    <?php if ($b_count > 0): ?>
+                                        <ul style="list-style:none; padding:0; font-size:13px;">
+                                            <?php while ($b = $b_res->fetch_assoc()):
+                                                $isOverdue = (strtotime($b['due_date']) < time());
+                                                ?>
+                                                <li style="margin-bottom:8px; padding-bottom:5px; border-bottom:1px dashed #ddd;">
+                                                    <strong><?php echo htmlspecialchars($b['title']); ?></strong><br>
+                                                    <small>Due: <span
+                                                            class="<?php echo $isOverdue ? 'text-danger' : ''; ?>"><?php echo date('M d, Y', strtotime($b['due_date'])); ?></span></small>
+                                                </li>
+                                            <?php endwhile; ?>
+                                        </ul>
+                                    <?php else: ?>
+                                        <p style="font-size:12px; color:#999;">No books currently borrowed.</p>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <h5 style="margin-bottom:10px; color:#888;">MEMBER INFO</h5>
+                                    <p style="font-size:13px; margin:4px 0;"><strong>Dept:</strong>
+                                        <?php echo $row['Department']; ?></p>
+                                    <p style="font-size:13px; margin:4px 0;"><strong>Course:</strong>
+                                        <?php echo $row['Course']; ?>     <?php echo $row['Section']; ?></p>
+                                    <p style="font-size:13px; margin:4px 0;"><strong>User ID:</strong>
+                                        #<?php echo $row['user_id']; ?></p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="member-expanded-details" style="display:none; padding: 20px; background:#fcfcfc; border-top: 1px solid #eee;">
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                            <div>
-                                <h5 style="margin-bottom:10px; color:#888;">BORROWED ITEMS</h5>
-                                <?php if($b_count > 0): ?>
-                                    <ul style="list-style:none; padding:0; font-size:13px;">
-                                        <?php while($b = $b_res->fetch_assoc()): 
-                                            $isOD = (strtotime($b['overdue_date']) < time());
-                                        ?>
-                                            <li style="margin-bottom:8px; padding-bottom:5px; border-bottom:1px dashed #ddd;">
-                                                <strong><?php echo htmlspecialchars($b['title']); ?></strong><br>
-                                                <small>Due: <span class="<?php echo $isOD ? 'text-danger' : ''; ?>"><?php echo date('M d, Y', strtotime($b['overdue_date'])); ?></span></small>
-                                            </li>
-                                        <?php endwhile; ?>
-                                    </ul>
-                                <?php else: ?>
-                                    <p style="font-size:12px; color:#999;">No books currently borrowed.</p>
-                                <?php endif; ?>
-                            </div>
-                            <div>
-                                <h5 style="margin-bottom:10px; color:#888;">MEMBER INFO</h5>
-                                <p style="font-size:13px; margin:4px 0;"><strong>Dept:</strong> <?php echo $row['Department']; ?></p>
-                                <p style="font-size:13px; margin:4px 0;"><strong>Course:</strong> <?php echo $row['Course']; ?> <?php echo $row['Section']; ?></p>
-                                <p style="font-size:13px; margin:4px 0;"><strong>User ID:</strong> #<?php echo $row['user_id']; ?></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
                 <?php endwhile; ?>
             </section>
         </main>
@@ -193,4 +219,5 @@ if (!$result) {
         }
     </script>
 </body>
+
 </html>
