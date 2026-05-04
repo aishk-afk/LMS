@@ -74,8 +74,12 @@ if (!$result) {
                     <li class="nav-item active"><a href="admin_users.php"><i class="fi fi-rr-users-alt"></i> Users</a>
                     </li>
                     <li class="nav-item"><a href="admin_waitlist.php"><i class="fi fi-rr-clock"></i> Waitlist</a></li>
+<<<<<<< HEAD
                     <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Settings</a>
                     </li>
+=======
+                    <li class="nav-item"><a href="admin_settings.php"><i class="fi fi-rr-settings"></i> Fine Settings</a></li>
+>>>>>>> 4f739376d3a1af8b44df2a4b8111ed5eb0116aff
                 </ul>
             </nav>
             <div class="sidebar-footer">
@@ -219,5 +223,9 @@ if (!$result) {
         }
     </script>
 </body>
+<<<<<<< HEAD
 
 </html>
+=======
+</html>
+>>>>>>> 4f739376d3a1af8b44df2a4b8111ed5eb0116aff
