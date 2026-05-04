@@ -19,11 +19,11 @@ $user_name = htmlspecialchars(trim(($user['first_name'] ?? '') . ' ' . ($user['l
 $user_query->close();
 
 // Fetch stats
-$borrowed_stmt = $conn->prepare("SELECT COUNT(*) as count FROM book_transaction WHERE Member_user_id = ? AND status IN ('Borrowed', 'Overdue')");
-$borrowed_stmt->bind_param("s", $user_id);
-$borrowed_stmt->execute();
-$borrowed_count = $borrowed_stmt->get_result()->fetch_assoc()['count'];
-$borrowed_stmt->close();
+$borrowed_count_stmt = $conn->prepare("SELECT COUNT(*) as count FROM book_transaction WHERE Member_user_id = ? AND status IN ('Active', 'Overdue')");
+$borrowed_count_stmt->bind_param("s", $user_id);
+$borrowed_count_stmt->execute();
+$borrowed_count = $borrowed_count_stmt->get_result()->fetch_assoc()['count'];
+$borrowed_count_stmt->close();
 
 $waitlist_stmt = $conn->prepare("SELECT COUNT(*) as count FROM waitlist WHERE Member_user_id = ?");
 $waitlist_stmt->bind_param("s", $user_id);
@@ -38,13 +38,13 @@ $total_fines = $fine_stmt->get_result()->fetch_assoc()['total_fines'] ?? 0;
 $fine_stmt->close();
 
 // Fetch currently borrowed books
+// Fix the borrowed SQL to exclude waitlisted books
 $borrowed_sql = "SELECT b.title,
                          CONCAT(a.first_name, ' ', a.last_name) AS author_name,
                          bt.borrow_date,
                          bt.due_date,
                          bt.status,
                          f.total_amount_accrued,
-                         f.overdue_days,
                          b.image_url,
                          g.genre_name
                  FROM book_transaction bt
@@ -54,12 +54,17 @@ $borrowed_sql = "SELECT b.title,
                  LEFT JOIN author a ON baa.Author_author_id = a.author_id
                  LEFT JOIN fine f ON f.Book_Transaction_borrow_id = bt.borrow_id
                  LEFT JOIN genre g ON b.Genre_genre_id = g.genre_id
-                 WHERE bt.Member_user_id = ? AND bt.status IN ('Borrowed', 'Overdue')
+                 WHERE bt.Member_user_id = ? 
+                 AND bt.status IN ('Active', 'Overdue')
+                 AND b.book_id NOT IN (
+                     SELECT Book_book_id FROM waitlist WHERE Member_user_id = ?
+                 )
                  ORDER BY bt.due_date ASC";
 $borrowed_stmt = $conn->prepare($borrowed_sql);
-$borrowed_stmt->bind_param("s", $user_id);
+$borrowed_stmt->bind_param("ss", $user_id, $user_id); // two params now
 $borrowed_stmt->execute();
 $borrowed_result = $borrowed_stmt->get_result();
+$borrowed_count = $borrowed_result->num_rows;    // get count from the result directly
 
 // Fetch borrow history
 $history_sql = "SELECT b.title,
@@ -195,23 +200,40 @@ $waitlist_stmt->close();
                     <span class="badge-count"><?php echo $borrowed_count; ?> Active</span>
                 </div>
                 <?php if ($borrowed_result->num_rows > 0): ?>
-                    <?php while ($book = $borrowed_result->fetch_assoc()): ?>
-                        <div class="borrowed-item-box">
-                            <img src="<?php echo htmlspecialchars($book['image_url'] ?? 'book3.jpg'); ?>" alt="Book" class="book-cover-sm">
+                    <?php while ($book = $borrowed_result->fetch_assoc()):
+                        $isOverdue = strtotime($book['due_date']) < time();
+                        $days_overdue = $isOverdue ? (int) ((time() - strtotime($book['due_date'])) / 86400) : 0;
+                        ?>
+                        <div class="borrowed-item-box"
+                            style="<?php echo $isOverdue ? 'background:#fff5f5; border-left:3px solid #ef4444;' : ''; ?>">
+                            <img src="<?php echo htmlspecialchars($book['image_url'] ?? 'book3.jpg'); ?>" alt="Book"
+                                class="book-cover-sm">
                             <div class="item-details">
-                                <h4><?php echo htmlspecialchars($book['title']); ?></h4>
-                                <p><?php echo htmlspecialchars($book['author_name'] ?? 'Unknown Author'); ?></p>
-                                <p class="borrow-dates">
-                                    Borrowed: <?php echo date('M d, Y', strtotime($book['borrow_date'])); ?>
-                                    <br>
-                                    Due: <?php echo date('M d, Y', strtotime($book['due_date'])); ?>
+                                <h4>
+                                    <?php echo htmlspecialchars($book['title']); ?>
+                                </h4>
+                                <p style="color:#64748b; font-size:13px;">
+                                    <?php echo htmlspecialchars($book['author_name'] ?? 'Unknown Author'); ?>
                                 </p>
-                                <div class="item-tags">
-                                    <?php if ($book['status'] == 'Overdue'): ?>
-                                        <span class="tag tag-red"><i class="fi fi-rr-exclamation"></i> Overdue <?php echo $book['overdue_days']; ?>d</span>
+                                <div class="item-tags" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                    <?php if ($isOverdue): ?>
+                                        <span class="tag tag-red">
+                                            <i class="fi fi-rr-exclamation"></i> Overdue
+                                            <?php echo $days_overdue; ?>d ·
+                                            <?php echo date('M d', strtotime($book['due_date'])); ?>
+                                        </span>
+                                        <span class="tag tag-red">Fine: ₱
+                                            <?php echo number_format($book['total_amount_accrued'] ?? 0, 2); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="tag tag-outline" style="color:#16a34a; border-color:#16a34a;">
+                                            ✓ Due
+                                            <?php echo date('M d', strtotime($book['due_date'])); ?>
+                                        </span>
                                     <?php endif; ?>
-                                    <span class="tag tag-outline">Fine: ₱<?php echo number_format($book['total_amount_accrued'] ?? 0, 2); ?></span>
-                                    <span class="tag tag-outline">Genre: <?php echo htmlspecialchars($book['genre_name'] ?? 'General'); ?></span>
+                                    <span class="tag tag-outline">
+                                        <?php echo htmlspecialchars($book['genre_name'] ?? 'General'); ?>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -243,12 +265,15 @@ $waitlist_stmt->close();
                         <tbody>
                             <?php while ($row = $history_result->fetch_assoc()): ?>
                                 <tr>
-                                    <td><strong><?php echo htmlspecialchars($row['title']); ?></strong><br><small><?php echo htmlspecialchars($row['author_name'] ?? 'Unknown Author'); ?></small></td>
-                                    <td><span class="status-tag status-reference">Genre: <?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span></td>
+                                    <td><strong><?php echo htmlspecialchars($row['title']); ?></strong><br><small><?php echo htmlspecialchars($row['author_name'] ?? 'Unknown Author'); ?></small>
+                                    </td>
+                                    <td><span class="status-tag status-reference">Genre:
+                                            <?php echo htmlspecialchars($row['genre_name'] ?? 'General'); ?></span></td>
                                     <td><?php echo date('M d, Y', strtotime($row['borrow_date'])); ?></td>
                                     <td><?php echo date('M d, Y', strtotime($row['due_date'])); ?></td>
                                     <td><?php echo date('M d, Y', strtotime($row['return_date'])); ?></td>
-                                    <td><?php echo ($row['total_amount_accrued'] > 0) ? '<span class="text-red">₱' . number_format($row['total_amount_accrued'], 2) . '</span>' : '<span class="status-none">None</span>'; ?></td>
+                                    <td><?php echo ($row['total_amount_accrued'] > 0) ? '<span class="text-red">₱' . number_format($row['total_amount_accrued'], 2) . '</span>' : '<span class="status-none">None</span>'; ?>
+                                    </td>
                                 </tr>
                             <?php endwhile; ?>
                         </tbody>
@@ -271,7 +296,8 @@ $waitlist_stmt->close();
                             <li>
                                 <strong><?php echo htmlspecialchars($item['title']); ?></strong><br>
                                 <small><?php echo htmlspecialchars($item['author_name'] ?? 'Unknown Author'); ?></small><br>
-                                <small>Position: #<?php echo intval($item['position_in_queue']); ?> • Requested: <?php echo date('M d, Y', strtotime($item['request_date'])); ?></small>
+                                <small>Position: #<?php echo intval($item['position_in_queue']); ?> • Requested:
+                                    <?php echo date('M d, Y', strtotime($item['request_date'])); ?></small>
                             </li>
                         <?php endwhile; ?>
                     </ul>
