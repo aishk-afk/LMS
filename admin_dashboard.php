@@ -22,7 +22,35 @@ $overdue_query = "SELECT bt.borrow_id, b.title, u.first_name, u.last_name, bt.du
                   LEFT JOIN fine f ON bt.borrow_id = f.Book_Transaction_borrow_id
                   WHERE bt.status = 'Overdue' OR (bt.status = 'Active' AND bt.due_date < CURDATE())";
 $overdue_result = mysqli_query($conn, $overdue_query);
+
+include 'db_config.php'; 
+// ── Overdue items with fines ──
+$overdue_sql = "
+    SELECT bt.borrow_id,
+           b.title,
+           b.image_url,
+           CONCAT(u.first_name, ' ', u.last_name) AS borrower_name,
+           bt.due_date,
+           DATEDIFF(CURDATE(), bt.due_date) AS days_overdue,
+           COALESCE(f.total_amount_accrued, 0) AS fine_amount
+    FROM book_transaction bt
+    JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id
+    JOIN book b ON bc.Book_book_id = b.book_id
+    JOIN user u ON bt.Member_user_id = u.user_id
+    LEFT JOIN fine f ON f.Book_Transaction_borrow_id = bt.borrow_id
+    WHERE bt.due_date < CURDATE()
+      AND (bt.status = 'Overdue' OR bt.status = 'Active')
+      AND bt.return_date IS NULL
+    ORDER BY bt.due_date ASC
+";
+$overdue_stmt = $conn->prepare($overdue_sql);
+$overdue_stmt->execute();
+$overdue_result = $overdue_stmt->get_result();
+$overdue_count = $overdue_result->num_rows;
+$overdue_stmt->close();
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -277,7 +305,7 @@ $overdue_result = mysqli_query($conn, $overdue_query);
                 <div class="stat-card" onclick="toggleDetails('overdueSection', 'arrow2')" style="cursor: pointer;">
                     <div class="stat-icon icon-red"><i class="fi fi-rr-exclamation"></i></div>
                     <div class="stat-info"><span>Overdue Items</span>
-                        <h3 class="text-red" id="statOverdueItems">—</h3>
+                        <h3 class="text-red" id="statOverdueItems"><?php echo $overdue_count; ?></h3>
                     </div>
                     <i class="fi fi-rr-angle-small-down dropdown-arrow" id="arrow2"></i>
                 </div>
@@ -351,18 +379,32 @@ $overdue_result = mysqli_query($conn, $overdue_query);
                         </tr>
                     </thead>
                     <tbody>
-                        <tr>
-                            <td>
-                                <div style="display:flex; align-items:center; gap:12px;">
-                                    <div class="book-img-holder"><img src="book1.jpg"></div>Pride and Prejudice
-                                </div>
-                            </td>
-                            <td>Jane Doe</td>
-                            <td class="text-red">29 days</td>
-                            <td>₱87</td>
-                            <td><button class="btn-return" style="background:#ef4444">Return</button></td>
-                        </tr>
-                    </tbody>
+    <?php 
+    $overdue_result->data_seek(0);
+    while ($row = $overdue_result->fetch_assoc()): ?>
+    <tr>
+        <td>
+            <div style="display:flex; align-items:center; gap:12px;">
+                <div class="book-img-holder">
+                    <img src="<?php echo htmlspecialchars($row['image_url'] ?? 'book3.jpg'); ?>"
+                        referrerpolicy="no-referrer" 
+                         onerror="this.src='book3.jpg'">
+                </div>
+                <?php echo htmlspecialchars($row['title']); ?>
+            </div>
+        </td>
+        <td><?php echo htmlspecialchars($row['borrower_name']); ?></td>
+        <td class="text-red"><?php echo $row['days_overdue']; ?> days</td>
+        <td>₱<?php echo number_format($row['fine_amount'], 2); ?></td>
+        <td>
+            <button class="btn-return" style="background:#ef4444"
+                onclick="openReturnModal(<?php echo $row['borrow_id']; ?>, '<?php echo htmlspecialchars($row['title']); ?>')">
+                Return
+            </button>
+        </td>
+    </tr>
+    <?php endwhile; ?>
+</tbody>
                 </table>
             </div>
 

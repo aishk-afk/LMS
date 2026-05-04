@@ -112,6 +112,8 @@ $history_count = $history_result->num_rows;
 // ── Waitlist with queue position ──
 $waitlist_sql = "
     SELECT b.title,
+           b.book_id,
+           b.image_url,
            CONCAT(a.first_name, ' ', a.last_name) AS author_name,
            w.request_date,
            (SELECT COUNT(*) FROM waitlist w2
@@ -248,9 +250,9 @@ $waitlist_stmt->close();
                                 <?php else: ?>
                                     <span class="tag tag-outline" style="color:#64748b;">No due date set</span>
                                 <?php endif; ?>
-                                <span class="tag tag-outline">
-                                    <?php echo htmlspecialchars($book['genre_name'] ?? 'General'); ?>
-                                </span>
+                                <span class="tag tag-outline" style="color:#64748b; border-color:#cbd5e1;">
+                                        <?php echo htmlspecialchars($book['genre_name'] ?? 'General'); ?>
+                                    </span>
                             </div>
                         </div>
                     </div>
@@ -322,18 +324,33 @@ $waitlist_stmt->close();
                 </div>
 
                 <?php if ($waitlist_count > 0): ?>
-                    <ul>
+                    <div class="waitlist-items">
                         <?php while ($item = $waitlist_result->fetch_assoc()): ?>
-                        <li>
-                            <strong><?php echo htmlspecialchars($item['title']); ?></strong><br>
-                            <small><?php echo htmlspecialchars($item['author_name'] ?? 'Unknown Author'); ?></small><br>
-                            <small>
-                                Position: #<?php echo intval($item['position_in_queue']); ?> ·
-                                Requested: <?php echo date('M d, Y', strtotime($item['request_date'])); ?>
-                            </small>
-                        </li>
+                            <div class="borrowed-item-box">
+                                <img src="<?php echo htmlspecialchars($item['image_url'] ?? 'book3.jpg'); ?>"
+                                    alt="Book" class="book-cover-sm"
+                                    onerror="this.src='book3.jpg'">
+                                <div class="item-details">
+                                    <h4><?php echo htmlspecialchars($item['title']); ?></h4>
+                                    <p style="color:#64748b; font-size:13px;">
+                                        <?php echo htmlspecialchars($item['author_name'] ?? 'Unknown Author'); ?>
+                                    </p>
+                                    <div class="item-tags" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                        <span class="tag tag-outline" style="color:#f97316; border-color:#f97316;">
+                                            Position: #<?php echo intval($item['position_in_queue']); ?>
+                                        </span>
+                                        <span class="tag tag-outline" style="color:#64748b; border-color:#cbd5e1;">
+                                            Requested: <?php echo date('M d, Y', strtotime($item['request_date'])); ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <button onclick="removeFromWaitlist(<?php echo intval($item['book_id']); ?>)"
+                                    style="margin-left:auto; background:white; border:1px solid #e2e8f0; padding:8px 14px; border-radius:8px; cursor:pointer; color:#ef4444; font-size:13px; display:flex; align-items:center; gap:6px;">
+                                    ✕ Remove
+                                </button>
+                            </div>
                         <?php endwhile; ?>
-                    </ul>
+                    </div>
                 <?php else: ?>
                     <div class="empty-state-card">
                         <p>You are not on any waitlists.</p>
