@@ -1,17 +1,17 @@
 <?php
 require_once 'db_config.php';
-require_once 'fine_calculator.php'; // Ensure this matches your calculator filename
+require_once 'fine_calculator.php'; 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $borrow_id = filter_var($_POST['borrow_id'], FILTER_VALIDATE_INT);
-    $condition = $_POST['fine_type']; // Expected 'NORMAL', 'DAMAGED', or 'LOST'
+    $condition = $_POST['fine_type']; // 'NORMAL', 'DAMAGED', or 'LOST'
     $admin_final_amount = filter_var($_POST['final_amount'], FILTER_VALIDATE_FLOAT);
 
-    $conn->begin_transaction(); // Start atomic operation
+    $conn->begin_transaction(); // Ensure all updates happen together or not at all
 
     try {
-        // Fetch detailed record to link the Copy, Price, and User[cite: 4]
-        $query = "SELECT bt.*, b.price, m.user_id, bt.Book_Copy_copy_id 
+        // Fetch record to get due_date, book price, and IDs
+        $query = "SELECT bt.*, b.price, m.user_id, bt.Book_Copy_copy_id, bt.due_date 
                   FROM book_transaction bt 
                   JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id
                   JOIN book b ON bc.Book_book_id = b.book_id 
@@ -25,14 +25,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$data) { throw new Exception("Transaction record not found."); }
 
-        // 1. UPDATE TRANSACTION: Mark as returned[cite: 4]
+        // 1. CALCULATE ACTUAL OVERDUE DAYS
+        $today = new DateTime();
+        $due_date = new DateTime($data['due_date']);
+        $overdue_days = ($today > $due_date) ? $today->diff($due_date)->days : 0;
+
+        // 2. UPDATE TRANSACTION: Mark as returned[cite: 1]
         $updateBt = "UPDATE book_transaction SET return_date = NOW(), status = 'Returned' WHERE borrow_id = ?";
         $stmtBt = $conn->prepare($updateBt);
         $stmtBt->bind_param("i", $borrow_id);
         $stmtBt->execute();
 
-        // 2. UPDATE BOOK COPY STATUS: Change based on condition[cite: 4]
-        // If LOST, copy stays 'Lost'. If DAMAGED, set to 'Under Repair'. Otherwise, 'Available'.
+        // 3. UPDATE BOOK COPY STATUS[cite: 1]
         $newStatus = 'Available';
         if ($condition === 'LOST') {
             $newStatus = 'Lost';
@@ -45,30 +49,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmtCopy->bind_param("si", $newStatus, $data['Book_Copy_copy_id']);
         $stmtCopy->execute();
 
-        // 3. RECORD FINE: Apply tiered rate logic[cite: 4]
+        // 4. RECORD FINE: Log to the student's balance[cite: 1]
         if ($admin_final_amount > 0) {
-            $insertFine = "INSERT INTO fine (fine_rate, Book_Transaction_borrow_id, total_amount_accrued, balance, overdue_date, overdue_days, Member_user_id) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $insertFine = "INSERT INTO fine (fine_rate, Book_Transaction_borrow_id, total_amount_accrued, balance, overdue_date, overdue_days, Member_user_id, status) 
+                           VALUES (?, ?, ?, ?, ?, ?, ?, 'Unpaid')";
             
-            // Note: overdue_days can be calculated using DATEDIFF between NOW() and $data['due_date'][cite: 4]
             $stmtFine = $conn->prepare($insertFine);
             $stmtFine->bind_param("diididi", 
-                getTieredFineRate($data['price']), // Dynamic tiered rate[cite: 4]
+                getTieredFineRate($data['price']), // Uses the "Grounded" rates from your settings[cite: 1]
                 $borrow_id, 
                 $admin_final_amount, 
-                $admin_final_amount, 
+                $admin_final_amount, // Balance equals total because it's unpaid[cite: 1]
                 $data['due_date'], 
-                0, 
+                $overdue_days, 
                 $data['user_id']
             );
             $stmtFine->execute();
         }
 
-        $conn->commit(); // Save all changes[cite: 4]
-        echo "Success: Book copy is now " . $newStatus . ". Fine: ₱" . number_format($admin_final_amount, 2);
+        $conn->commit(); 
+        echo "Success: Book is " . $newStatus . ". Fine of ₱" . number_format($admin_final_amount, 2) . " added to account.";
 
     } catch (Exception $e) {
-        $conn->rollback(); // Undo everything if one step fails[cite: 4]
+        $conn->rollback(); 
         echo "Process Failed: " . $e->getMessage();
     }
 }
