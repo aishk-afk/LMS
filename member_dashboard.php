@@ -42,10 +42,17 @@ $waitlist_count_stmt->close();
 
 // ── Outstanding fines ──
 $fine_stmt = $conn->prepare("
-    SELECT COALESCE(SUM(f.balance), 0) AS total_fines
+    SELECT COALESCE(SUM(
+        CASE 
+            WHEN bt.return_date IS NULL AND bt.due_date < CURDATE()
+            THEN DATEDIFF(CURDATE(), bt.due_date) * f.fine_rate
+            ELSE f.total_amount_accrued
+        END
+    ), 0) AS total_fines
     FROM fine f
     JOIN book_transaction bt ON f.Book_Transaction_borrow_id = bt.borrow_id
     WHERE bt.Member_user_id = ?
+      AND (f.amount_paid = 0 OR f.amount_paid IS NULL)
 ");
 $fine_stmt->bind_param("s", $user_id);
 $fine_stmt->execute();
@@ -59,7 +66,11 @@ $borrowed_sql = "
            bt.borrow_date,
            bt.due_date,
            bt.status,
-           f.total_amount_accrued,
+           CASE 
+               WHEN bt.return_date IS NULL AND bt.due_date < CURDATE()
+               THEN DATEDIFF(CURDATE(), bt.due_date) * f.fine_rate
+               ELSE f.total_amount_accrued
+           END AS total_amount_accrued,
            b.image_url,
            g.genre_name
     FROM book_transaction bt

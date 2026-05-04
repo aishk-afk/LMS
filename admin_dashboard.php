@@ -32,7 +32,13 @@ $overdue_sql = "
            CONCAT(u.first_name, ' ', u.last_name) AS borrower_name,
            bt.due_date,
            DATEDIFF(CURDATE(), bt.due_date) AS days_overdue,
-           COALESCE(f.total_amount_accrued, 0) AS fine_amount
+           COALESCE(
+               CASE
+                   WHEN bt.return_date IS NULL AND bt.due_date < CURDATE()
+                   THEN DATEDIFF(CURDATE(), bt.due_date) * f.fine_rate
+                   ELSE f.total_amount_accrued
+               END
+           , 0) AS fine_amount
     FROM book_transaction bt
     JOIN book_copy bc ON bt.Book_Copy_copy_id = bc.copy_id
     JOIN book b ON bc.Book_book_id = b.book_id
