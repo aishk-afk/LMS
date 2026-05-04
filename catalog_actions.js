@@ -3,7 +3,7 @@
 // --- ADMIN ACTIONS ---
 // --- MEMBER ACTIONS ---
 function borrowBook(bookId) {
-    fetch('book_process.php', {
+    fetch('borrow_process.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `book_id=${bookId}`
@@ -70,7 +70,6 @@ document.getElementById('bookForm').onsubmit = async function (e) {
     }
 
     formData.append('title', document.getElementById('apiSearchInput').value);
-    formData.append('author', document.getElementById('modalAuthor').value);
     formData.append('isbn', document.getElementById('modalISBN').value);
     formData.append('image_url', document.getElementById('modalCover').value);
     formData.append('copies', document.getElementById('modalCopies').value || '1');
@@ -159,6 +158,11 @@ function openModal() {
         document.getElementById('modalPreviewImg').style.display = 'none';
         document.getElementById('placeholderText').style.display = 'block';
         document.getElementById('modalCover').value = '';
+
+        // Clear the price so it doesn't show the previous book's price
+        document.getElementById('modalPrice').value = '';
+        document.getElementById('edit_book_id').value = '';
+        document.getElementById('addBookModal').classList.add('active');
     }
 
     document.getElementById('addBookModal').classList.add('active');
@@ -184,15 +188,28 @@ function openEditModal(bookId) {
 
             // 2. Fill the form fields with correct IDs
             document.getElementById('apiSearchInput').value = book.title || '';
-            document.getElementById('modalAuthor').value = book.author_name || '';
+            document.getElementById('modalAuthor').value = book.author || '';
             document.getElementById('modalISBN').value = book.ISBN || '';
             document.getElementById('bookDescription').value = book.description || '';
-            document.getElementById('modalPublisher').value = book.publisher_name || '';
-            document.getElementById('modalYear').value = (book.publication_date && book.publication_date !== '0000') ? book.publication_date.split('-')[0] : '';
-            document.getElementById('modalPrice').value = book.price || '';
+            document.getElementById('modalPublisher').value = book.publisher || '';
+            document.getElementById('modalYear').value = book.publication_date ? book.publication_date.split('-')[0] : '';
             document.getElementById('modalEdition').value = book.edition || '';
             document.getElementById('bookGenre').value = book.Genre_genre_id || '';
-            document.getElementById('modalCopies').value = book.copies || 0;
+            document.getElementById('edit_book_id').value = bookId;
+
+            // 2. The Zero-Proof Price Logic
+            // This says: If price is exactly null or undefined, leave it blank. 
+            // Otherwise, use whatever value is there (including 0).
+            const priceInput = document.getElementById('modalPrice');
+            priceInput.value = (book.price !== undefined && book.price !== null) ? book.price : '';
+            // 3. Safe Header Update
+            const header = document.getElementById('modalHeaderTitle');
+            if (header) {
+                header.innerText = "Edit Material Metadata";
+            }
+            // 4. Open Modal
+            document.getElementById('addBookModal').classList.add('active');
+            document.querySelector('#bookForm button[type="submit"]').innerText = "Update Catalog";
 
             // 3. Display the book cover image
             if (book.image_url) {
